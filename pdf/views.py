@@ -1,6 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from .models import Document
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Document, StudyPlan, StudyWeek, StudyActivity
 import os
 import json
 from django.conf import settings
@@ -11,6 +15,7 @@ from gemini import process_document_with_gemini
 def landing(request):
     return render(request,'landing.html')
 
+@login_required
 def upload(request):
     if request.method == 'POST':
         uploaded_file = request.FILES.get('file')
@@ -49,16 +54,92 @@ def upload(request):
 
         return JsonResponse({'error': 'No file uploaded'}, status=400)
 
-    return render(request, 'upload.html')
+    return render(request, 'upload_simple.html')
 
 @csrf_exempt
+@login_required
 def analyze(request):
     if request.method == 'POST':
         try:
 
             data = json.loads(request.body)
             file_url = data.get('file_url')
-            prompt = "You are an expert in structuring data from course syllabi into JSON format.  Given the following information from a syllabus, create a JSON object representing a detailed study plan.  The study plan should include a weekly breakdown, topics, sub-details.  Focus on extracting information from the 'Syllabus' and 'Lecture Plan' sections to create the weekly structure.  If specific weeks are not defined, create logical groupings based on the lecture sequence.  Prioritize accuracy and completeness. strictly use the folowing json structure {'course name':'name of the course','study plan':[{'week':1,'topic':'topic to learn on that week','subtopic':['list of subtopics for the week']},'more weeks']}"
+            prompt = """You are an expert educational consultant and study plan architect. Analyze the provided course document and create a comprehensive, actionable study plan that transforms passive learning into active, structured progress.
+
+ANALYSIS REQUIREMENTS:
+- Extract course name, duration, and learning objectives
+- Identify all topics, subtopics, and their logical dependencies
+- Determine appropriate difficulty progression (Beginner → Intermediate → Advanced)
+- Estimate realistic time requirements for each component
+- Suggest effective study methods for different learning styles
+
+OUTPUT STRUCTURE - Use this EXACT JSON format:
+{
+  "course_name": "Full course title from document",
+  "total_duration_weeks": 12,
+  "course_description": "Brief overview of what students will learn",
+  "learning_objectives": ["Primary skill 1", "Primary skill 2", "Primary skill 3"],
+  "study_plan": [
+    {
+      "week": 1,
+      "topic": "Main topic for this week",
+      "difficulty_level": "Beginner|Intermediate|Advanced",
+      "estimated_hours": 8,
+      "learning_objectives": ["Specific goal 1", "Specific goal 2"],
+      "subtopics": [
+        {
+          "name": "Subtopic name",
+          "estimated_minutes": 120,
+          "study_method": "Reading|Practice|Project|Discussion|Quiz"
+        }
+      ],
+      "study_activities": [
+        {
+          "type": "Reading",
+          "description": "Read specific chapters or materials",
+          "estimated_time": "2 hours"
+        },
+        {
+          "type": "Practice",
+          "description": "Complete exercises or coding problems",
+          "estimated_time": "3 hours"
+        },
+        {
+          "type": "Review",
+          "description": "Summarize key concepts and create notes",
+          "estimated_time": "1 hour"
+        }
+      ],
+      "prerequisites": ["Previous topic knowledge required"],
+      "key_concepts": ["Important concept 1", "Important concept 2"],
+      "assessment_suggestions": ["Quiz on basic concepts", "Practical exercise"],
+      "resources_needed": ["Textbook chapters", "Online tutorials", "Practice datasets"],
+      "success_criteria": ["Can explain concept X", "Can solve problem type Y"]
+    }
+  ],
+  "study_tips": [
+    "Use spaced repetition for memorization",
+    "Practice coding daily for 30 minutes",
+    "Join study groups for difficult topics"
+  ],
+  "recommended_schedule": {
+    "daily_study_time": "1-2 hours",
+    "weekly_review_time": "2 hours",
+    "practice_frequency": "Daily for hands-on topics"
+  }
+}
+
+IMPORTANT GUIDELINES:
+1. Make time estimates realistic (total weekly hours should be 6-12 hours)
+2. Progress difficulty gradually - don't jump from beginner to advanced
+3. Include variety in study methods (reading, practice, projects, discussions)
+4. Ensure prerequisites are clearly mapped
+5. Focus on actionable, specific activities rather than vague descriptions
+6. If the document doesn't specify weeks, create logical 12-16 week progression
+7. Include both theoretical understanding and practical application
+8. Suggest assessment methods that reinforce learning
+
+Analyze the document thoroughly and create a study plan that would help a student master this subject systematically and effectively."""
 
             if not file_url:
                 return JsonResponse({'error': 'No file URL provided'}, status=400)
@@ -66,10 +147,93 @@ def analyze(request):
             # Process the document with Gemini
             result = process_document_with_gemini(file_url, prompt)
 
-            return JsonResponse({
-                'success': True,
-                'result': result
-            })
+            # Parse the result and save to database
+            try:
+                study_plan_data = json.loads(result)
+
+                # Find the document by URL (assuming it's in the format /media/filename)
+                file_name = file_url.split('/')[-1]
+                print(f"DEBUG: Looking for document with file_name: {file_name}")
+
+                # Try to find document by the actual file path first, then by file_name
+                document = Document.objects.filter(file=file_name).first()
+                if not document:
+                    # Fallback: try to match by original filename
+                    document = Document.objects.filter(file_name__icontains=file_name.split('_')[0]).first()
+
+                print(f"DEBUG: Found document: {document}")
+                if document:
+                    print(f"DEBUG: Document file: {document.file}, file_name: {document.file_name}")
+
+                if document:
+                    # Create or update study plan
+                    study_plan, created = StudyPlan.objects.get_or_create(
+                        user=request.user,
+                        document=document,
+                        defaults={
+                            'course_name': study_plan_data.get('course_name', 'Untitled Course'),
+                            'course_description': study_plan_data.get('course_description', ''),
+                            'total_duration_weeks': study_plan_data.get('total_duration_weeks', 12),
+                            'recommended_daily_study_time': study_plan_data.get('recommended_schedule', {}).get('daily_study_time', '1-2 hours'),
+                            'study_plan_data': study_plan_data
+                        }
+                    )
+
+                    if not created:
+                        # Update existing study plan
+                        study_plan.course_name = study_plan_data.get('course_name', study_plan.course_name)
+                        study_plan.course_description = study_plan_data.get('course_description', study_plan.course_description)
+                        study_plan.total_duration_weeks = study_plan_data.get('total_duration_weeks', study_plan.total_duration_weeks)
+                        study_plan.recommended_daily_study_time = study_plan_data.get('recommended_schedule', {}).get('daily_study_time', study_plan.recommended_daily_study_time)
+                        study_plan.study_plan_data = study_plan_data
+                        study_plan.save()
+
+                    # Clear existing weeks and activities if updating
+                    if not created:
+                        study_plan.weeks.all().delete()
+
+                    # Create study weeks and activities
+                    for week_data in study_plan_data.get('study_plan', []):
+                        study_week = StudyWeek.objects.create(
+                            study_plan=study_plan,
+                            week_number=week_data.get('week', 1),
+                            topic=week_data.get('topic', 'Untitled Topic'),
+                            estimated_hours=f"{week_data.get('estimated_hours', 8)} hours"
+                        )
+
+                        # Create activities for this week
+                        for activity_data in week_data.get('study_activities', []):
+                            activity_type = activity_data.get('type', 'other').lower()
+                            if activity_type not in ['reading', 'assignment', 'practical', 'project', 'review', 'quiz']:
+                                activity_type = 'other'
+
+                            StudyActivity.objects.create(
+                                study_week=study_week,
+                                activity_type=activity_type,
+                                description=activity_data.get('description', ''),
+                                estimated_time=activity_data.get('estimated_time', '')
+                            )
+
+                    return JsonResponse({
+                        'success': True,
+                        'result': result,
+                        'study_plan_id': study_plan.id
+                    })
+                else:
+                    # Document not found, still return the result
+                    return JsonResponse({
+                        'success': True,
+                        'result': result,
+                        'warning': 'Study plan generated but not saved - document not found'
+                    })
+
+            except json.JSONDecodeError:
+                # If JSON parsing fails, still return the raw result
+                return JsonResponse({
+                    'success': True,
+                    'result': result,
+                    'warning': 'Study plan generated but not saved - invalid JSON format'
+                })
         except Exception as e:
             return JsonResponse({
                 'success': False,
@@ -77,3 +241,163 @@ def analyze(request):
             }, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def study_plans(request):
+    """Display all study plans for the current user"""
+    user_study_plans = StudyPlan.objects.filter(user=request.user).prefetch_related('weeks')
+
+    # Add progress information to each study plan
+    for plan in user_study_plans:
+        weeks = plan.weeks.all()
+        total_weeks = weeks.count()
+        completed_weeks = weeks.filter(is_completed=True).count()
+
+        plan.total_weeks = total_weeks
+        plan.completed_weeks = completed_weeks
+        plan.progress_percentage = (completed_weeks / total_weeks * 100) if total_weeks > 0 else 0
+
+    return render(request, 'study_plans.html', {'study_plans': user_study_plans})
+
+
+@login_required
+def study_plan_detail(request, plan_id):
+    """Display detailed view of a specific study plan with progress tracking"""
+    try:
+        study_plan = StudyPlan.objects.get(id=plan_id, user=request.user)
+        weeks = study_plan.weeks.all().prefetch_related('activities')
+
+        # Calculate progress statistics
+        total_weeks = weeks.count()
+        completed_weeks = weeks.filter(is_completed=True).count()
+        total_activities = sum(week.activities.count() for week in weeks)
+        completed_activities = sum(week.activities.filter(is_completed=True).count() for week in weeks)
+
+        progress_stats = {
+            'weeks_progress': (completed_weeks / total_weeks * 100) if total_weeks > 0 else 0,
+            'activities_progress': (completed_activities / total_activities * 100) if total_activities > 0 else 0,
+            'completed_weeks': completed_weeks,
+            'total_weeks': total_weeks,
+            'completed_activities': completed_activities,
+            'total_activities': total_activities,
+        }
+
+        return render(request, 'study_plan_detail.html', {
+            'study_plan': study_plan,
+            'weeks': weeks,
+            'progress_stats': progress_stats
+        })
+    except StudyPlan.DoesNotExist:
+        messages.error(request, 'Study plan not found.')
+        return redirect('study_plans')
+
+
+@csrf_exempt
+@login_required
+def toggle_week_completion(request, week_id):
+    """Toggle completion status of a study week"""
+    if request.method == 'POST':
+        try:
+            week = StudyWeek.objects.get(id=week_id, study_plan__user=request.user)
+            week.is_completed = not week.is_completed
+            if week.is_completed:
+                from django.utils import timezone
+                week.completed_at = timezone.now()
+            else:
+                week.completed_at = None
+            week.save()
+
+            return JsonResponse({
+                'success': True,
+                'is_completed': week.is_completed,
+                'completed_at': week.completed_at.isoformat() if week.completed_at else None
+            })
+        except StudyWeek.DoesNotExist:
+            return JsonResponse({'error': 'Week not found'}, status=404)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+@login_required
+def toggle_activity_completion(request, activity_id):
+    """Toggle completion status of a study activity"""
+    if request.method == 'POST':
+        try:
+            activity = StudyActivity.objects.get(id=activity_id, study_week__study_plan__user=request.user)
+            activity.is_completed = not activity.is_completed
+            if activity.is_completed:
+                from django.utils import timezone
+                activity.completed_at = timezone.now()
+            else:
+                activity.completed_at = None
+            activity.save()
+
+            return JsonResponse({
+                'success': True,
+                'is_completed': activity.is_completed,
+                'completed_at': activity.completed_at.isoformat() if activity.completed_at else None
+            })
+        except StudyActivity.DoesNotExist:
+            return JsonResponse({'error': 'Activity not found'}, status=404)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+# Authentication Views
+def user_login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            messages.success(request, f'Welcome back, {user.first_name or user.username}!')
+            return redirect('landing')
+        else:
+            messages.error(request, 'Invalid username or password.')
+
+    return render(request, 'auth/login.html')
+
+def user_logout(request):
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('landing')
+
+def user_register(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+
+        # Validation
+        if password1 != password2:
+            messages.error(request, 'Passwords do not match.')
+            return render(request, 'auth/register.html')
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return render(request, 'auth/register.html')
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already registered.')
+            return render(request, 'auth/register.html')
+
+        # Create user
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password1,
+            first_name=first_name,
+            last_name=last_name
+        )
+
+        messages.success(request, 'Account created successfully! Please log in.')
+        return redirect('login')
+
+    return render(request, 'auth/register.html')

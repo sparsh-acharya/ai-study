@@ -1,58 +1,79 @@
-from dotenv import load_dotenv,find_dotenv
+# Fully corrected gemini.py file
+
+from dotenv import load_dotenv, find_dotenv
 import os
-import json
-from google import genai
-from google.genai import types
 import requests
+import google.generativeai as genai
 
 def process_document_with_gemini(docLink: str, prompt: str) -> str:
     """
-    Process a document using Gemini API and return the response.
+    Process a document using the Gemini API and return the response.
 
     Args:
-        docLink (str): URL of the document to process
-        prompt (str): The prompt to send to Gemini API
+        docLink (str): URL of the document to process.
+        prompt (str): The prompt to send to the Gemini API.
 
     Returns:
-        str: The response from Gemini API
+        str: The response from the Gemini API.
     """
-    # Load environment variables
-    load_dotenv(find_dotenv())
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    try:
+        # Load environment variables
+        load_dotenv(find_dotenv())
+        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-    # Initialize Gemini client
-    client = genai.Client(api_key = GEMINI_API_KEY)
+        if not GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-    # Download the file content
-    response = requests.get(docLink)
-    docData = response.content
+        # 1. Configure the API key (the modern way)
+        genai.configure(api_key=GEMINI_API_KEY)
 
-    # Process with Gemini
-    response = client.models.generate_content(
-        model = "gemini-1.5-flash",
-        config={"response_mime_type": "application/json"},
-        contents = [
-            types.Part.from_bytes(
-                data = docData,
-                mime_type = 'application/pdf',
-            ),
-            prompt
+        # Download the file content
+        print(f"Downloading document from: {docLink}")
+        response = requests.get(docLink)
+        response.raise_for_status()  # This will raise an error for bad responses (4xx or 5xx)
+        doc_bytes = response.content
+        print("Document downloaded successfully.")
+
+        # 2. Prepare the document part for the API
+        pdf_file = {"mime_type": "application/pdf", "data": doc_bytes}
+
+        # 3. Instantiate the model and generate content
+        # Use available model names from the API
+        model_names = [
+            "gemini-flash-latest",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-pro-latest"
         ]
-    )
 
-    return response.text
+        model = None
+        for model_name in model_names:
+            try:
+                print(f"Trying model: {model_name}")
+                model = genai.GenerativeModel(model_name)
 
-# Example usage
-# if __name__ == "__main__":
-#     docLink = "https://discovery.ucl.ac.uk/id/eprint/10089234/1/343019_3_art_0_py4t4l_convrt.pdf"
-#     prompt = "summarize this"
-#     result = process_document_with_gemini(docLink, prompt)
+                # Test the model with a simple request first
+                model.generate_content("Hello")
+                print(f"Successfully initialized model: {model_name}")
+                break
+            except Exception as e:
+                print(f"Failed to initialize model {model_name}: {str(e)}")
+                continue
 
-#     try:
-#         # Try to parse the response as JSON first
-#         json_result = json.loads(result)
-#         print('acha vala\n\n')
-#         print(json.dumps(json_result, indent=4))
-#     except json.JSONDecodeError:
-#         # If it's not valid JSON, print the raw text
-#         print(result)
+        if model is None:
+            raise ValueError("Could not initialize any Gemini model. Please check your API key and model availability.")
+
+        generation_config = genai.types.GenerationConfig(
+            response_mime_type="application/json"
+        )
+
+        response = model.generate_content(
+            [pdf_file, prompt],
+            generation_config=generation_config
+        )
+
+        return response.text
+
+    except Exception as e:
+        print(f"Error in process_document_with_gemini: {str(e)}")
+        raise e

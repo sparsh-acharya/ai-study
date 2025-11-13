@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Study Plans - StudyPlan AI</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8',
+                            500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e',
+                        },
+                        secondary: {
+                            50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399',
+                            500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b',
+                        },
+                        neutral: {
+                            50: '#fafafa', 100: '#f5f5f5', 200: '#e5e5e5', 300: '#d4d4d4', 400: '#a3a3a3',
+                            500: '#737373', 600: '#525252', 700: '#404040', 800: '#262626', 900: '#171717',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+                        'medium': '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        'large': '0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.04)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        * { font-feature-settings: "cv02", "cv03", "cv04", "cv11"; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-optical-sizing: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #0ea5e9, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .study-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .study-card:hover {
+            transform: translateY(-4px);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-neutral-50 via-white to-primary-50/30 min-h-screen">
+    <!-- Navigation -->
+    <nav class="glass-effect fixed w-full z-50 border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-18">
+                <div class="flex items-center">
+                    <a href="{% url 'landing' %}" class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center">
+                            <i class="ri-book-open-line text-white text-lg"></i>
+                        </div>
+                        <span class="text-2xl font-['Pacifico'] gradient-text">StudyPlan</span>
+                        <span class="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full font-medium">AI</span>
+                    </a>
+                </div>
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex items-center space-x-6">
+                    <a href="{% url 'upload' %}" class="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 shadow-soft">
+                        <i class="ri-upload-cloud-line"></i>
+                        <span>Upload New</span>
+                    </a>
+                    {% if user.is_authenticated %}
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                                    <span class="text-primary-600 font-semibold text-sm">{{ user.first_name.0|default:user.username.0|upper }}</span>
+                                </div>
+                                <span class="text-neutral-700 font-medium hidden xl:block">{{ user.first_name|default:user.username }}</span>
+                            </div>
+                            <a href="{% url 'logout' %}" class="text-neutral-600 hover:text-neutral-800 font-medium transition-colors">Logout</a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="flex lg:hidden items-center">
+                    <button id="mobile-menu-button" class="text-neutral-600 hover:text-primary-600 w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                        <i id="menu-icon" class="ri-menu-line text-xl transition-transform duration-200"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="lg:hidden fixed inset-x-0 top-18 bg-white/95 backdrop-blur-xl border-b border-neutral-200 transform -translate-y-full opacity-0 transition-all duration-300 ease-out">
+            <div class="px-4 py-6 space-y-4">
+                <!-- Navigation Links -->
+                <div class="space-y-2">
+                    <a href="{% url 'upload' %}" class="mobile-nav-link block px-4 py-3 text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 rounded-xl transition-all duration-200 font-semibold text-center">
+                        <i class="ri-upload-cloud-line mr-2"></i>Upload New Document
+                    </a>
+                    <a href="{% url 'landing' %}" class="mobile-nav-link block px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 font-medium">
+                        <i class="ri-home-line mr-3"></i>Home
+                    </a>
+                </div>
+
+                <!-- User Section -->
+                {% if user.is_authenticated %}
+                    <div class="border-t border-neutral-200 pt-4 space-y-2">
+                        <div class="px-4 py-3 bg-primary-50 rounded-xl">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                                    <span class="text-primary-600 font-semibold">{{ user.first_name.0|default:user.username.0|upper }}</span>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-neutral-900">{{ user.first_name|default:user.username }}</p>
+                                    <p class="text-sm text-neutral-600">{{ user.email }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{% url 'logout' %}" class="mobile-nav-link block px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 font-medium">
+                            <i class="ri-logout-box-line mr-3"></i>Logout
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
+        <!-- Breadcrumbs -->
+        <nav class="flex mb-8" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="{% url 'landing' %}" class="inline-flex items-center text-sm font-medium text-neutral-500 hover:text-primary-600 transition-colors">
+                        <i class="ri-home-line mr-2"></i>
+                        Home
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="ri-arrow-right-s-line text-neutral-400"></i>
+                        <span class="ml-1 text-sm font-medium text-neutral-900 md:ml-2">My Study Plans</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <div class="mb-12">
+            <div class="inline-flex items-center space-x-2 bg-primary-50 text-primary-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">
+                <i class="ri-book-open-line"></i>
+                <span>My Learning Journey</span>
+            </div>
+            <h1 class="text-4xl lg:text-5xl font-bold text-neutral-900 mb-6 leading-tight">
+                My <span class="gradient-text">Study Plans</span>
+            </h1>
+            <p class="text-xl text-neutral-600 max-w-2xl leading-relaxed">
+                Track your progress, manage your learning journey, and achieve your educational goals with AI-powered study plans.
+            </p>
+        </div>
+
+        {% if study_plans %}
+            <div class="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
+                {% for plan in study_plans %}
+                    <div class="study-card bg-white rounded-3xl shadow-large border border-neutral-100 hover:border-primary-200 overflow-hidden">
+                        <!-- Card Header -->
+                        <div class="bg-gradient-to-br from-primary-50 to-secondary-50 p-4 md:p-6 border-b border-neutral-100">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-3 sm:space-y-0">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-lg md:text-xl font-bold text-neutral-900 mb-2 leading-tight truncate">{{ plan.course_name }}</h3>
+                                    <p class="text-neutral-600 text-xs md:text-sm leading-relaxed">{{ plan.course_description|truncatechars:100 }}</p>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <span class="inline-flex items-center px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs font-bold bg-primary-100 text-primary-700">
+                                        {{ plan.total_duration_weeks }} weeks
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Progress Ring -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="relative w-10 h-10 md:w-12 md:h-12">
+                                        <svg class="w-10 h-10 md:w-12 md:h-12 transform -rotate-90" viewBox="0 0 36 36">
+                                            <path class="text-neutral-200" stroke="currentColor" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                            <path class="text-primary-500" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"
+                                                  stroke-dasharray="{{ plan.progress_percentage|floatformat:0 }}, 100"
+                                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        </svg>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span class="text-xs font-bold text-neutral-700">{{ plan.progress_percentage|floatformat:0 }}%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs md:text-sm font-semibold text-neutral-900">{{ plan.completed_weeks }}/{{ plan.total_weeks }} weeks</p>
+                                        <p class="text-xs text-neutral-600">completed</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="p-4 md:p-6">
+                            <div class="space-y-3 mb-6">
+                                <div class="flex items-center text-xs md:text-sm text-neutral-600">
+                                    <div class="w-7 h-7 md:w-8 md:h-8 bg-primary-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                        <i class="ri-time-line text-primary-600 text-sm"></i>
+                                    </div>
+                                    <span class="font-medium">{{ plan.recommended_daily_study_time }} daily</span>
+                                </div>
+                                <div class="flex items-center text-xs md:text-sm text-neutral-600">
+                                    <div class="w-7 h-7 md:w-8 md:h-8 bg-secondary-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                        <i class="ri-calendar-line text-secondary-600 text-sm"></i>
+                                    </div>
+                                    <span class="font-medium">Created {{ plan.created_at|date:"M d, Y" }}</span>
+                                </div>
+                                <div class="flex items-center text-xs md:text-sm text-neutral-600">
+                                    <div class="w-7 h-7 md:w-8 md:h-8 bg-neutral-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                        <i class="ri-file-pdf-line text-neutral-600 text-sm"></i>
+                                    </div>
+                                    <span class="font-medium truncate">{{ plan.document.file_name }}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
+                                <a href="{% url 'study_plan_detail' plan.id %}"
+                                   class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 shadow-soft touch-manipulation">
+                                    <i class="ri-eye-line mr-2"></i>
+                                    <span class="text-sm md:text-base">View Details</span>
+                                </a>
+                                <div class="text-xs text-gray-500 text-center sm:text-right">
+                                    Updated {{ plan.updated_at|timesince }} ago
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-16">
+                <div class="max-w-md mx-auto">
+                    <div class="w-24 h-24 bg-gradient-to-br from-primary-100 to-secondary-100 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+                        <i class="ri-book-open-line text-4xl text-primary-600"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-neutral-900 mb-4">Ready to Start Learning?</h3>
+                    <p class="text-neutral-600 mb-8 leading-relaxed">
+                        Upload your first document and let our AI create a personalized study plan with progress tracking,
+                        time estimates, and learning objectives tailored just for you.
+                    </p>
+
+                    <!-- Call to Action -->
+                    <div class="space-y-4">
+                        <a href="{% url 'upload' %}"
+                           class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 shadow-soft hover:shadow-medium">
+                            <i class="ri-upload-cloud-line mr-2 text-lg"></i>
+                            Upload Your First Document
+                        </a>
+                        <p class="text-sm text-neutral-500">
+                            Supports PDF files up to 50MB
+                        </p>
+                    </div>
+
+                    <!-- Help Section -->
+                    <div class="mt-12 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100 text-left">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <i class="ri-question-line text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-neutral-900 mb-3">What can you upload?</h4>
+                                <ul class="text-sm text-neutral-600 space-y-2">
+                                    <li class="flex items-center space-x-2">
+                                        <i class="ri-check-line text-green-500 text-xs"></i>
+                                        <span>Textbooks and course materials</span>
+                                    </li>
+                                    <li class="flex items-center space-x-2">
+                                        <i class="ri-check-line text-green-500 text-xs"></i>
+                                        <span>Lecture notes and presentations</span>
+                                    </li>
+                                    <li class="flex items-center space-x-2">
+                                        <i class="ri-check-line text-green-500 text-xs"></i>
+                                        <span>Research papers and articles</span>
+                                    </li>
+                                    <li class="flex items-center space-x-2">
+                                        <i class="ri-check-line text-green-500 text-xs"></i>
+                                        <span>Study guides and handouts</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="fixed top-4 right-4 z-50 space-y-2">
+            {% for message in messages %}
+                <div class="bg-{{ message.tags }}-100 border border-{{ message.tags }}-400 text-{{ message.tags }}-700 px-4 py-3 rounded" role="alert">
+                    <span class="block sm:inline">{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile Menu Functionality
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuIcon = document.getElementById('menu-icon');
+            let isMenuOpen = false;
+
+            function toggleMobileMenu() {
+                isMenuOpen = !isMenuOpen;
+
+                if (isMenuOpen) {
+                    // Open menu
+                    mobileMenu.classList.remove('-translate-y-full', 'opacity-0');
+                    mobileMenu.classList.add('translate-y-0', 'opacity-100');
+                    menuIcon.classList.remove('ri-menu-line');
+                    menuIcon.classList.add('ri-close-line', 'rotate-180');
+                    document.body.style.overflow = 'hidden'; // Prevent scrolling
+                } else {
+                    // Close menu
+                    mobileMenu.classList.remove('translate-y-0', 'opacity-100');
+                    mobileMenu.classList.add('-translate-y-full', 'opacity-0');
+                    menuIcon.classList.remove('ri-close-line', 'rotate-180');
+                    menuIcon.classList.add('ri-menu-line');
+                    document.body.style.overflow = ''; // Restore scrolling
+                }
+            }
+
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', toggleMobileMenu);
+
+                // Close menu when clicking on navigation links
+                const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+                mobileNavLinks.forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (isMenuOpen) {
+                            toggleMobileMenu();
+                        }
+                    });
+                });
+
+                // Close menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (isMenuOpen && !mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target)) {
+                        toggleMobileMenu();
+                    }
+                });
+
+                // Close menu on escape key
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape' && isMenuOpen) {
+                        toggleMobileMenu();
+                    }
+                });
+
+                // Handle window resize
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth >= 1024 && isMenuOpen) { // lg breakpoint
+                        toggleMobileMenu();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
