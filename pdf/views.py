@@ -4,12 +4,14 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Document, StudyPlan, StudyWeek, StudyActivity
+from .models import Document, StudyPlan, StudyWeek, StudyActivity, LearningResource
 import os
 import json
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from gemini import process_document_with_gemini
+from study_plan_prompts import get_basic_prompt, get_enhanced_prompt
+from youtube_helper import search_youtube_videos
 
 # Create your views here.
 def landing(request):
@@ -18,7 +20,17 @@ def landing(request):
 @login_required
 def upload(request):
     if request.method == 'POST':
+        # Check if this is a JSON request (for multiple files) or form data
+        if request.content_type == 'application/json':
+            # Handle JSON request for enhanced mode
+            data = json.loads(request.body)
+            return JsonResponse({'error': 'Use form data for file uploads'}, status=400)
+
+        # Handle form data upload
         uploaded_file = request.FILES.get('file')
+        syllabus_file = request.FILES.get('syllabus')  # Optional syllabus
+        document_type = request.POST.get('document_type', 'handout')
+
         if uploaded_file:
             # Validate file type (only PDF)
             if uploaded_file.content_type != 'application/pdf':
@@ -33,24 +45,50 @@ def upload(request):
             if not os.path.exists(media_dir):
                 os.makedirs(media_dir)
 
-            # Create document instance
+            # Create main document instance
             document = Document(
                 file=uploaded_file,
                 file_name=uploaded_file.name,
                 file_size=uploaded_file.size,
-                file_type='pdf'  # Since we only accept PDFs now
+                file_type='pdf',
+                document_type=document_type
             )
             document.save()
 
-            # Get the full file path
-            file_path = document.file.path
+            # Build absolute URLs for the files
+            file_absolute_url = request.build_absolute_uri(document.file.url)
 
-            return JsonResponse({
+            response_data = {
                 'success': True,
                 'message': 'File uploaded successfully',
                 'file_name': document.file_name,
-                'file_url': document.file.url  # This will give us the correct media URL
-            })
+                'file_url': file_absolute_url,
+                'document_id': document.id
+            }
+
+            # Handle optional syllabus upload
+            if syllabus_file:
+                if syllabus_file.content_type != 'application/pdf':
+                    return JsonResponse({'error': 'Syllabus must be a PDF file.'}, status=400)
+
+                if syllabus_file.size > 50 * 1024 * 1024:
+                    return JsonResponse({'error': 'Syllabus file size exceeds 50MB limit.'}, status=400)
+
+                syllabus_doc = Document(
+                    file=syllabus_file,
+                    file_name=syllabus_file.name,
+                    file_size=syllabus_file.size,
+                    file_type='pdf',
+                    document_type='syllabus'
+                )
+                syllabus_doc.save()
+
+                syllabus_absolute_url = request.build_absolute_uri(syllabus_doc.file.url)
+                response_data['syllabus_uploaded'] = True
+                response_data['syllabus_url'] = syllabus_absolute_url
+                response_data['syllabus_id'] = syllabus_doc.id
+
+            return JsonResponse(response_data)
 
         return JsonResponse({'error': 'No file uploaded'}, status=400)
 
@@ -61,85 +99,16 @@ def upload(request):
 def analyze(request):
     if request.method == 'POST':
         try:
-
             data = json.loads(request.body)
             file_url = data.get('file_url')
-            prompt = """You are an expert educational consultant and study plan architect. Analyze the provided course document and create a comprehensive, actionable study plan that transforms passive learning into active, structured progress.
+            syllabus_url = data.get('syllabus_url')  # Optional
+            plan_mode = data.get('plan_mode', 'basic')  # 'basic' or 'enhanced'
 
-ANALYSIS REQUIREMENTS:
-- Extract course name, duration, and learning objectives
-- Identify all topics, subtopics, and their logical dependencies
-- Determine appropriate difficulty progression (Beginner → Intermediate → Advanced)
-- Estimate realistic time requirements for each component
-- Suggest effective study methods for different learning styles
-
-OUTPUT STRUCTURE - Use this EXACT JSON format:
-{
-  "course_name": "Full course title from document",
-  "total_duration_weeks": 12,
-  "course_description": "Brief overview of what students will learn",
-  "learning_objectives": ["Primary skill 1", "Primary skill 2", "Primary skill 3"],
-  "study_plan": [
-    {
-      "week": 1,
-      "topic": "Main topic for this week",
-      "difficulty_level": "Beginner|Intermediate|Advanced",
-      "estimated_hours": 8,
-      "learning_objectives": ["Specific goal 1", "Specific goal 2"],
-      "subtopics": [
-        {
-          "name": "Subtopic name",
-          "estimated_minutes": 120,
-          "study_method": "Reading|Practice|Project|Discussion|Quiz"
-        }
-      ],
-      "study_activities": [
-        {
-          "type": "Reading",
-          "description": "Read specific chapters or materials",
-          "estimated_time": "2 hours"
-        },
-        {
-          "type": "Practice",
-          "description": "Complete exercises or coding problems",
-          "estimated_time": "3 hours"
-        },
-        {
-          "type": "Review",
-          "description": "Summarize key concepts and create notes",
-          "estimated_time": "1 hour"
-        }
-      ],
-      "prerequisites": ["Previous topic knowledge required"],
-      "key_concepts": ["Important concept 1", "Important concept 2"],
-      "assessment_suggestions": ["Quiz on basic concepts", "Practical exercise"],
-      "resources_needed": ["Textbook chapters", "Online tutorials", "Practice datasets"],
-      "success_criteria": ["Can explain concept X", "Can solve problem type Y"]
-    }
-  ],
-  "study_tips": [
-    "Use spaced repetition for memorization",
-    "Practice coding daily for 30 minutes",
-    "Join study groups for difficult topics"
-  ],
-  "recommended_schedule": {
-    "daily_study_time": "1-2 hours",
-    "weekly_review_time": "2 hours",
-    "practice_frequency": "Daily for hands-on topics"
-  }
-}
-
-IMPORTANT GUIDELINES:
-1. Make time estimates realistic (total weekly hours should be 6-12 hours)
-2. Progress difficulty gradually - don't jump from beginner to advanced
-3. Include variety in study methods (reading, practice, projects, discussions)
-4. Ensure prerequisites are clearly mapped
-5. Focus on actionable, specific activities rather than vague descriptions
-6. If the document doesn't specify weeks, create logical 12-16 week progression
-7. Include both theoretical understanding and practical application
-8. Suggest assessment methods that reinforce learning
-
-Analyze the document thoroughly and create a study plan that would help a student master this subject systematically and effectively."""
+            # Select appropriate prompt based on mode
+            if plan_mode == 'enhanced':
+                prompt = get_enhanced_prompt(has_syllabus=bool(syllabus_url))
+            else:
+                prompt = get_basic_prompt()
 
             if not file_url:
                 return JsonResponse({'error': 'No file URL provided'}, status=400)
@@ -166,6 +135,12 @@ Analyze the document thoroughly and create a study plan that would help a studen
                     print(f"DEBUG: Document file: {document.file}, file_name: {document.file_name}")
 
                 if document:
+                    # Find syllabus document if provided
+                    syllabus_document = None
+                    if syllabus_url:
+                        syllabus_file_name = syllabus_url.split('/')[-1]
+                        syllabus_document = Document.objects.filter(file=syllabus_file_name).first()
+
                     # Create or update study plan
                     study_plan, created = StudyPlan.objects.get_or_create(
                         user=request.user,
@@ -175,7 +150,9 @@ Analyze the document thoroughly and create a study plan that would help a studen
                             'course_description': study_plan_data.get('course_description', ''),
                             'total_duration_weeks': study_plan_data.get('total_duration_weeks', 12),
                             'recommended_daily_study_time': study_plan_data.get('recommended_schedule', {}).get('daily_study_time', '1-2 hours'),
-                            'study_plan_data': study_plan_data
+                            'study_plan_data': study_plan_data,
+                            'plan_mode': plan_mode,
+                            'syllabus_document': syllabus_document
                         }
                     )
 
@@ -186,6 +163,8 @@ Analyze the document thoroughly and create a study plan that would help a studen
                         study_plan.total_duration_weeks = study_plan_data.get('total_duration_weeks', study_plan.total_duration_weeks)
                         study_plan.recommended_daily_study_time = study_plan_data.get('recommended_schedule', {}).get('daily_study_time', study_plan.recommended_daily_study_time)
                         study_plan.study_plan_data = study_plan_data
+                        study_plan.plan_mode = plan_mode
+                        study_plan.syllabus_document = syllabus_document
                         study_plan.save()
 
                     # Clear existing weeks and activities if updating
@@ -204,15 +183,60 @@ Analyze the document thoroughly and create a study plan that would help a studen
                         # Create activities for this week
                         for activity_data in week_data.get('study_activities', []):
                             activity_type = activity_data.get('type', 'other').lower()
-                            if activity_type not in ['reading', 'assignment', 'practical', 'project', 'review', 'quiz']:
+                            if activity_type not in ['reading', 'assignment', 'practical', 'project', 'review', 'quiz', 'video']:
                                 activity_type = 'other'
 
-                            StudyActivity.objects.create(
+                            activity = StudyActivity.objects.create(
                                 study_week=study_week,
                                 activity_type=activity_type,
                                 description=activity_data.get('description', ''),
                                 estimated_time=activity_data.get('estimated_time', '')
                             )
+
+                            # If this is a video activity in enhanced mode, fetch YouTube videos
+                            if plan_mode == 'enhanced' and activity_type == 'video':
+                                search_query = activity_data.get('search_query', week_data.get('topic', ''))
+                                if search_query:
+                                    try:
+                                        videos = search_youtube_videos(search_query, max_results=3)
+                                        for video in videos:
+                                            LearningResource.objects.create(
+                                                study_week=study_week,
+                                                resource_type='youtube',
+                                                title=video.get('title', ''),
+                                                url=video.get('url', ''),
+                                                description=video.get('description', ''),
+                                                thumbnail_url=video.get('thumbnail_url', ''),
+                                                duration=video.get('duration', ''),
+                                                channel_name=video.get('channel_name', ''),
+                                                view_count=video.get('view_count', 0)
+                                            )
+                                    except Exception as e:
+                                        print(f"Error fetching YouTube videos: {str(e)}")
+
+                        # Process recommended_resources if in enhanced mode
+                        if plan_mode == 'enhanced':
+                            for resource_data in week_data.get('recommended_resources', []):
+                                resource_type = resource_data.get('type', 'other')
+                                search_query = resource_data.get('search_query', '')
+
+                                if resource_type == 'video' and search_query:
+                                    try:
+                                        videos = search_youtube_videos(search_query, max_results=2)
+                                        for video in videos:
+                                            LearningResource.objects.create(
+                                                study_week=study_week,
+                                                resource_type='youtube',
+                                                title=video.get('title', ''),
+                                                url=video.get('url', ''),
+                                                description=resource_data.get('purpose', video.get('description', '')),
+                                                thumbnail_url=video.get('thumbnail_url', ''),
+                                                duration=video.get('duration', ''),
+                                                channel_name=video.get('channel_name', ''),
+                                                view_count=video.get('view_count', 0)
+                                            )
+                                    except Exception as e:
+                                        print(f"Error fetching recommended videos: {str(e)}")
 
                     return JsonResponse({
                         'success': True,

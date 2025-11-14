@@ -225,34 +225,98 @@
 
         <!-- Upload Zone -->
         <div class="bg-white rounded-3xl shadow-large border border-neutral-100 p-10">
+            <!-- Mode Selection -->
+            <div class="mb-8">
+                <label class="block text-sm font-semibold text-neutral-700 mb-4">Study Plan Mode</label>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="planMode" value="basic" class="peer sr-only" checked>
+                        <div class="p-6 border-2 border-neutral-200 rounded-xl peer-checked:border-primary-500 peer-checked:bg-primary-50 transition-all duration-200 hover:border-primary-300">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="ri-file-text-line text-primary-600 text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-neutral-900 mb-1">Basic Mode</h3>
+                                    <p class="text-sm text-neutral-600">Generate a structured study plan from your document</p>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="planMode" value="enhanced" class="peer sr-only">
+                        <div class="p-6 border-2 border-neutral-200 rounded-xl peer-checked:border-secondary-500 peer-checked:bg-secondary-50 transition-all duration-200 hover:border-secondary-300">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-secondary-100 to-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="ri-youtube-line text-secondary-600 text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-neutral-900 mb-1">Enhanced Mode ⭐</h3>
+                                    <p class="text-sm text-neutral-600">Study plan + YouTube videos + resources</p>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <form id="uploadForm" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-                <div id="uploadSection" class="drag-drop-zone rounded-2xl p-6 md:p-12 text-center cursor-pointer relative group min-h-[300px] md:min-h-[400px] flex items-center justify-center">
-                    <input type="file" class="file-input" accept=".pdf" id="fileInput" name="file">
-                    <div class="space-y-4 md:space-y-6 w-full">
-                        <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl md:rounded-3xl mx-auto flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                            <i class="ri-file-pdf-line text-2xl md:text-3xl text-primary-600"></i>
-                        </div>
-                        <div class="space-y-2">
-                            <p class="text-lg md:text-xl font-bold text-neutral-900">Drag and drop your PDF file here</p>
-                            <p class="text-neutral-600 text-sm md:text-base">or tap to browse from your device</p>
-                        </div>
-                        <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6 text-sm text-neutral-500">
-                            <div class="flex items-center space-x-2">
-                                <i class="ri-file-line"></i>
-                                <span>PDF files only</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <i class="ri-database-line"></i>
-                                <span>Max 50MB</span>
-                            </div>
-                        </div>
 
-                        <!-- Mobile-friendly browse button -->
-                        <div class="md:hidden mt-6">
-                            <button type="button" class="w-full px-6 py-4 bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-600 transition-colors touch-manipulation" onclick="document.getElementById('fileInput').click()">
-                                <i class="ri-folder-open-line mr-2"></i>
-                                Browse Files
+                <!-- Main Document Upload -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-neutral-700 mb-3">Course Handout / Notes</label>
+                    <div id="uploadSection" class="drag-drop-zone rounded-2xl p-6 md:p-12 text-center cursor-pointer relative group min-h-[250px] flex items-center justify-center">
+                        <input type="file" class="file-input" accept=".pdf" id="fileInput" name="file">
+                        <div class="space-y-4 md:space-y-6 w-full">
+                            <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl md:rounded-3xl mx-auto flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i class="ri-file-pdf-line text-2xl md:text-3xl text-primary-600"></i>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-lg md:text-xl font-bold text-neutral-900">Drag and drop your PDF file here</p>
+                                <p class="text-neutral-600 text-sm md:text-base">or tap to browse from your device</p>
+                            </div>
+                            <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-6 text-sm text-neutral-500">
+                                <div class="flex items-center space-x-2">
+                                    <i class="ri-file-line"></i>
+                                    <span>PDF files only</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="ri-database-line"></i>
+                                    <span>Max 50MB</span>
+                                </div>
+                            </div>
+
+                            <!-- Mobile-friendly browse button -->
+                            <div class="md:hidden mt-6">
+                                <button type="button" class="w-full px-6 py-4 bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-600 transition-colors touch-manipulation" onclick="document.getElementById('fileInput').click()">
+                                    <i class="ri-folder-open-line mr-2"></i>
+                                    Browse Files
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optional Syllabus Upload (Enhanced Mode Only) -->
+                <div id="syllabusSection" class="mb-6 hidden">
+                    <label class="block text-sm font-semibold text-neutral-700 mb-3">
+                        Course Syllabus (Optional)
+                        <span class="text-xs font-normal text-neutral-500 ml-2">Helps align study plan with course timeline</span>
+                    </label>
+                    <div class="border-2 border-dashed border-neutral-200 rounded-xl p-6 hover:border-secondary-300 transition-all duration-200">
+                        <input type="file" accept=".pdf" id="syllabusInput" name="syllabus" class="hidden">
+                        <button type="button" onclick="document.getElementById('syllabusInput').click()" class="w-full flex items-center justify-center space-x-2 text-neutral-600 hover:text-secondary-600 transition-colors">
+                            <i class="ri-add-circle-line text-xl"></i>
+                            <span class="font-medium">Add Syllabus (Optional)</span>
+                        </button>
+                        <div id="syllabusFileName" class="hidden mt-3 flex items-center justify-between bg-secondary-50 p-3 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <i class="ri-file-pdf-line text-secondary-600"></i>
+                                <span class="text-sm font-medium text-neutral-700" id="syllabusName"></span>
+                            </div>
+                            <button type="button" onclick="removeSyllabus()" class="text-neutral-400 hover:text-red-500 transition-colors">
+                                <i class="ri-close-line"></i>
                             </button>
                         </div>
                     </div>
@@ -484,6 +548,41 @@
 
             let uploadController = null;
             let uploadStartTime = 0;
+            let uploadedFileUrl = null;
+            let uploadedSyllabusUrl = null;
+
+            // Mode selection handling
+            const planModeRadios = document.querySelectorAll('input[name="planMode"]');
+            const syllabusSection = document.getElementById('syllabusSection');
+            const syllabusInput = document.getElementById('syllabusInput');
+            const syllabusFileName = document.getElementById('syllabusFileName');
+            const syllabusName = document.getElementById('syllabusName');
+
+            planModeRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.value === 'enhanced') {
+                        syllabusSection.classList.remove('hidden');
+                    } else {
+                        syllabusSection.classList.add('hidden');
+                        removeSyllabus();
+                    }
+                });
+            });
+
+            // Syllabus file handling
+            syllabusInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    syllabusName.textContent = file.name;
+                    syllabusFileName.classList.remove('hidden');
+                }
+            });
+
+            window.removeSyllabus = function() {
+                syllabusInput.value = '';
+                syllabusFileName.classList.add('hidden');
+                uploadedSyllabusUrl = null;
+            };
 
             // Drag and drop handlers
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -658,6 +757,13 @@
 
                 const formData = new FormData(form);
                 formData.append('file', file);
+
+                // Add syllabus if in enhanced mode and syllabus is selected
+                const selectedMode = document.querySelector('input[name="planMode"]:checked').value;
+                if (selectedMode === 'enhanced' && syllabusInput.files.length > 0) {
+                    formData.append('syllabus', syllabusInput.files[0]);
+                }
+
                 uploadController = new AbortController();
 
                 fetch('{% url "upload" %}', {
@@ -669,6 +775,12 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        // Store uploaded file URLs
+                        uploadedFileUrl = data.file_url;
+                        if (data.syllabus_uploaded) {
+                            uploadedSyllabusUrl = data.syllabus_url;
+                        }
+
                         // Complete progress animation
                         progressBar.style.width = '100%';
                         progressPercent.textContent = '100%';
@@ -677,6 +789,9 @@
                         setTimeout(() => {
                             showUploadSuccess();
                             successFileName.textContent = data.file_name;
+                            if (data.syllabus_uploaded) {
+                                successFileName.textContent += ' + Syllabus';
+                            }
                             viewPdfLink.href = data.file_url;
                         }, 500);
                     } else {
@@ -730,13 +845,27 @@
                     showAnalysisLoading();
 
                     try {
+                        // Get selected plan mode
+                        const selectedMode = document.querySelector('input[name="planMode"]:checked').value;
+
+                        // Prepare request body
+                        const requestBody = {
+                            file_url: uploadedFileUrl || viewPdfLink.href,
+                            plan_mode: selectedMode
+                        };
+
+                        // Add syllabus URL if available
+                        if (uploadedSyllabusUrl) {
+                            requestBody.syllabus_url = uploadedSyllabusUrl;
+                        }
+
                         const response = await fetch('/analyze/', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                             },
-                            body: JSON.stringify({ file_url: viewPdfLink.href })
+                            body: JSON.stringify(requestBody)
                         });
 
                         const data = await response.json();
