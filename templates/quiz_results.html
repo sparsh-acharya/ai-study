@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Results - StudyPlan AI</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#10B981'}}}}</script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .confetti {
+            animation: confetti-fall 3s ease-out forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'landing' %}" class="flex items-center">
+                        <span class="text-2xl font-['Pacifico'] text-primary">StudyPlan</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'quiz_detail' attempt.quiz.id %}" class="text-gray-600 hover:text-primary transition-colors">
+                        <i class="ri-arrow-left-line mr-1"></i>Back to Quiz
+                    </a>
+                    <a href="{% url 'study_plan_detail' attempt.quiz.study_plan.id %}" class="text-gray-600 hover:text-primary transition-colors">
+                        Study Plan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Results Header -->
+        <div class="{% if attempt.passed %}bg-gradient-to-r from-green-500 to-emerald-600{% else %}bg-gradient-to-r from-orange-500 to-red-600{% endif %} rounded-2xl shadow-xl p-8 mb-8 text-white relative overflow-hidden">
+            {% if attempt.passed %}
+            <!-- Confetti for passing -->
+            <div class="absolute inset-0 pointer-events-none">
+                <div class="confetti absolute top-0 left-1/4 w-2 h-2 bg-yellow-300 rounded-full"></div>
+                <div class="confetti absolute top-0 left-1/2 w-2 h-2 bg-pink-300 rounded-full" style="animation-delay: 0.2s"></div>
+                <div class="confetti absolute top-0 left-3/4 w-2 h-2 bg-blue-300 rounded-full" style="animation-delay: 0.4s"></div>
+            </div>
+            {% endif %}
+            
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-4xl font-bold mb-2">
+                            {% if attempt.passed %}
+                                🎉 Congratulations!
+                            {% else %}
+                                Keep Trying!
+                            {% endif %}
+                        </h1>
+                        <p class="text-lg opacity-90">{{ attempt.quiz.title }}</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <div>
+                                <div class="text-5xl font-bold">{{ attempt.percentage|floatformat:0 }}%</div>
+                                <div class="text-sm">Score</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                        <div class="text-sm opacity-75">Score</div>
+                        <div class="text-2xl font-bold">{{ attempt.score }}/{{ attempt.max_score }}</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                        <div class="text-sm opacity-75">Time Taken</div>
+                        <div class="text-2xl font-bold">{{ attempt.time_taken_formatted }}</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                        <div class="text-sm opacity-75">Status</div>
+                        <div class="text-2xl font-bold">{% if attempt.passed %}Passed ✓{% else %}Failed{% endif %}</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                        <div class="text-sm opacity-75">XP Earned</div>
+                        <div class="text-2xl font-bold">{% if attempt.passed %}+{{ attempt.xp_awarded }}{% else %}0{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Results -->
+        <div class="bg-white rounded-xl shadow-sm p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                <i class="ri-file-list-3-line text-primary mr-3"></i>
+                Detailed Results
+            </h2>
+
+            <div class="space-y-6">
+                {% for result in results %}
+                <div class="border-2 {% if result.is_correct %}border-green-200 bg-green-50{% else %}border-red-200 bg-red-50{% endif %} rounded-xl p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 flex-1">
+                            <span class="text-gray-500 mr-2">Q{{ forloop.counter }}.</span>
+                            {{ result.question.question_text }}
+                        </h3>
+                        <div class="ml-4">
+                            {% if result.is_correct %}
+                                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                                    <i class="ri-check-line text-white text-xl"></i>
+                                </div>
+                            {% else %}
+                                <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                                    <i class="ri-close-line text-white text-xl"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 mb-4">
+                        {% for answer in result.question.answers.all %}
+                        <div class="p-3 rounded-lg {% if answer.is_correct %}bg-green-100 border-2 border-green-300{% elif answer == result.user_answer %}bg-red-100 border-2 border-red-300{% else %}bg-white border border-gray-200{% endif %}">
+                            <div class="flex items-center justify-between">
+                                <span class="{% if answer.is_correct %}font-semibold text-green-900{% elif answer == result.user_answer %}font-semibold text-red-900{% else %}text-gray-700{% endif %}">
+                                    {{ answer.answer_text }}
+                                </span>
+                                {% if answer.is_correct %}
+                                    <span class="text-green-600 font-semibold text-sm">✓ Correct Answer</span>
+                                {% elif answer == result.user_answer %}
+                                    <span class="text-red-600 font-semibold text-sm">✗ Your Answer</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if result.question.explanation %}
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <div class="flex items-start">
+                            <i class="ri-lightbulb-line text-blue-500 text-xl mr-3 mt-1"></i>
+                            <div>
+                                <div class="font-semibold text-blue-900 mb-1">Explanation</div>
+                                <div class="text-blue-800 text-sm">{{ result.question.explanation }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-center space-x-4">
+            <a href="{% url 'quiz_detail' attempt.quiz.id %}" class="px-8 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-semibold">
+                <i class="ri-refresh-line mr-2"></i>Retake Quiz
+            </a>
+            <a href="{% url 'study_plan_detail' attempt.quiz.study_plan.id %}" class="px-8 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all font-semibold">
+                <i class="ri-arrow-left-line mr-2"></i>Back to Study Plan
+            </a>
+        </div>
+    </div>
+</body>
+</html>
+

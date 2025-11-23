@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ quiz.title }} - StudyPlan AI</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#10B981'}}}}</script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .question-card {
+            transition: all 0.3s ease;
+        }
+        .answer-option {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .answer-option:hover {
+            transform: translateX(4px);
+        }
+        .answer-option.selected {
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            color: white;
+            border-color: #4F46E5;
+        }
+        .timer {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'landing' %}" class="flex items-center">
+                        <span class="text-2xl font-['Pacifico'] text-primary">StudyPlan</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'study_plan_detail' quiz.study_plan.id %}" class="text-gray-600 hover:text-primary transition-colors">
+                        <i class="ri-arrow-left-line mr-1"></i>Back to Study Plan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="quiz-intro" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Quiz Header -->
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <h1 class="text-3xl font-bold mb-2">{{ quiz.title }}</h1>
+                    <p class="text-purple-100 mb-4">{{ quiz.description }}</p>
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        <div class="flex items-center">
+                            <i class="ri-question-line mr-2"></i>
+                            <span>{{ quiz.total_questions }} Questions</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="ri-time-line mr-2"></i>
+                            <span>{% if quiz.time_limit_minutes %}{{ quiz.time_limit_minutes }} minutes{% else %}No time limit{% endif %}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="ri-trophy-line mr-2"></i>
+                            <span>{{ quiz.xp_reward }} XP Reward</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="ri-bar-chart-line mr-2"></i>
+                            <span>{{ quiz.passing_score }}% to Pass</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <i class="ri-file-list-3-line text-4xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Previous Attempts -->
+        {% if attempts %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <i class="ri-history-line text-primary mr-2"></i>
+                Previous Attempts
+            </h2>
+            <div class="space-y-3">
+                {% for attempt in attempts %}
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center {% if attempt.passed %}bg-green-100 text-green-600{% else %}bg-red-100 text-red-600{% endif %}">
+                            <i class="{% if attempt.passed %}ri-check-line{% else %}ri-close-line{% endif %} text-2xl"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-900">{{ attempt.percentage }}% - {{ attempt.score }}/{{ attempt.max_score }}</div>
+                            <div class="text-sm text-gray-600">{{ attempt.completed_at|date:"M d, Y H:i" }} • {{ attempt.time_taken_formatted }}</div>
+                        </div>
+                    </div>
+                    <a href="{% url 'quiz_results' attempt.id %}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">
+                        View Results
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Start Quiz Button -->
+        <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+            {% if incomplete_attempt %}
+                <div class="mb-6">
+                    <i class="ri-error-warning-line text-yellow-500 text-5xl mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Incomplete Attempt Found</h3>
+                    <p class="text-gray-600">You have an unfinished quiz attempt. You can continue or start fresh.</p>
+                </div>
+                <div class="flex justify-center space-x-4">
+                    <button onclick="startQuiz()" class="px-8 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all font-semibold">
+                        Start New Attempt
+                    </button>
+                </div>
+            {% else %}
+                <i class="ri-play-circle-line text-primary text-6xl mb-4"></i>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Ready to Test Your Knowledge?</h3>
+                <p class="text-gray-600 mb-6">Answer all questions to the best of your ability. Good luck!</p>
+                <button onclick="startQuiz()" class="px-8 py-4 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold text-lg">
+                    <i class="ri-rocket-line mr-2"></i>Start Quiz
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quiz Taking Interface (Hidden initially) -->
+    <div id="quiz-interface" class="hidden max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Timer and Progress -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-gray-600">
+                        Question <span id="current-question-num">1</span> of {{ quiz.total_questions }}
+                    </div>
+                    <div class="flex-1 bg-gray-200 rounded-full h-2 w-64">
+                        <div id="progress-bar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                {% if quiz.time_limit_minutes %}
+                <div class="flex items-center space-x-2 timer">
+                    <i class="ri-time-line text-2xl text-primary"></i>
+                    <span id="timer" class="text-2xl font-bold text-gray-900">{{ quiz.time_limit_minutes }}:00</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Question Card -->
+        <div id="question-container" class="bg-white rounded-xl shadow-lg p-8 mb-6">
+            <!-- Questions will be loaded here dynamically -->
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-between">
+            <button id="prev-btn" onclick="previousQuestion()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all font-semibold disabled:opacity-50" disabled>
+                <i class="ri-arrow-left-line mr-2"></i>Previous
+            </button>
+            <button id="next-btn" onclick="nextQuestion()" class="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-semibold">
+                Next<i class="ri-arrow-right-line ml-2"></i>
+            </button>
+            <button id="submit-btn" onclick="submitQuiz()" class="hidden px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold">
+                <i class="ri-check-line mr-2"></i>Submit Quiz
+            </button>
+        </div>
+    </div>
+
+    {% csrf_token %}
+    <script>
+        let currentAttemptId = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = {};
+        let startTime = null;
+        let timerInterval = null;
+
+        // Load questions data
+        const quizData = [
+            {% for question in quiz.questions.all %}
+            {
+                id: {{ question.id }},
+                text: `{{ question.question_text|escapejs }}`,
+                answers: [
+                    {% for answer in question.answers.all %}
+                    {
+                        id: {{ answer.id }},
+                        text: `{{ answer.answer_text|escapejs }}`
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        async function startQuiz() {
+            try {
+                const response = await fetch('/quiz/{{ quiz.id }}/start/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                console.log('Start quiz response:', data);
+
+                if (data.success) {
+                    currentAttemptId = data.attempt_id;
+                    startTime = Date.now();
+
+                    // Hide intro, show quiz
+                    document.getElementById('quiz-intro').classList.add('hidden');
+                    document.getElementById('quiz-interface').classList.remove('hidden');
+
+                    // Start timer if applicable
+                    {% if quiz.time_limit_minutes %}
+                    startTimer({{ quiz.time_limit_minutes }} * 60);
+                    {% endif %}
+
+                    // Load first question
+                    loadQuestion(0);
+                } else {
+                    console.error('Failed to start quiz:', data);
+                    alert('Failed to start quiz: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error starting quiz:', error);
+                alert('Failed to start quiz. Please try again. Error: ' + error.message);
+            }
+        }
+
+        function loadQuestion(index) {
+            currentQuestionIndex = index;
+            const question = quizData[index];
+
+            // Update progress
+            document.getElementById('current-question-num').textContent = index + 1;
+            const progress = ((index + 1) / quizData.length) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+
+            // Build question HTML
+            let html = `
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    ${question.text}
+                </h2>
+                <div class="space-y-3">
+            `;
+
+            question.answers.forEach((answer, idx) => {
+                const isSelected = userAnswers[question.id] === answer.id;
+                html += `
+                    <div class="answer-option ${isSelected ? 'selected' : ''} p-4 border-2 rounded-xl ${isSelected ? 'border-primary' : 'border-gray-200'}"
+                         onclick="selectAnswer(${question.id}, ${answer.id})">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full border-2 ${isSelected ? 'border-white bg-white/20' : 'border-gray-300'} flex items-center justify-center mr-4">
+                                <span class="font-bold">${String.fromCharCode(65 + idx)}</span>
+                            </div>
+                            <span class="text-lg">${answer.text}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            document.getElementById('question-container').innerHTML = html;
+
+            // Update navigation buttons
+            document.getElementById('prev-btn').disabled = index === 0;
+
+            if (index === quizData.length - 1) {
+                document.getElementById('next-btn').classList.add('hidden');
+                document.getElementById('submit-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('next-btn').classList.remove('hidden');
+                document.getElementById('submit-btn').classList.add('hidden');
+            }
+        }
+
+        function selectAnswer(questionId, answerId) {
+            userAnswers[questionId] = answerId;
+            loadQuestion(currentQuestionIndex); // Reload to show selection
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                loadQuestion(currentQuestionIndex - 1);
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < quizData.length - 1) {
+                loadQuestion(currentQuestionIndex + 1);
+            }
+        }
+
+        async function submitQuiz() {
+            // Check if all questions are answered
+            const unanswered = quizData.filter(q => !userAnswers[q.id]);
+            if (unanswered.length > 0) {
+                if (!confirm(`You have ${unanswered.length} unanswered question(s). Submit anyway?`)) {
+                    return;
+                }
+            }
+
+            const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+
+            try {
+                const response = await fetch(`/quiz-attempt/${currentAttemptId}/submit/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        answers: userAnswers,
+                        time_taken_seconds: timeTaken
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Redirect to results
+                    window.location.href = `/quiz-attempt/${currentAttemptId}/results/`;
+                }
+            } catch (error) {
+                console.error('Error submitting quiz:', error);
+                alert('Failed to submit quiz. Please try again.');
+            }
+        }
+
+        function startTimer(seconds) {
+            let remaining = seconds;
+            const timerEl = document.getElementById('timer');
+
+            timerInterval = setInterval(() => {
+                remaining--;
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up! Submitting your quiz...');
+                    submitQuiz();
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
+
