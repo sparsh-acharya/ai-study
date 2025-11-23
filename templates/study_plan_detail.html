@@ -40,8 +40,15 @@
                     <a href="{% url 'study_plans' %}" class="text-gray-600 hover:text-primary transition-colors">
                         <i class="ri-arrow-left-line mr-1"></i>Back to Study Plans
                     </a>
+                    <a href="{% url 'user_dashboard' %}" class="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all">
+                        <i class="ri-trophy-line"></i>
+                        <span class="font-semibold">Level {{ user_stats.level }}</span>
+                        {% if user_stats.new_achievements_count > 0 %}
+                            <span class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ user_stats.new_achievements_count }}</span>
+                        {% endif %}
+                    </a>
                     {% if user.is_authenticated %}
-                        <span class="text-gray-600">Welcome, {{ user.first_name|default:user.username }}!</span>
+                        <span class="text-gray-600">{{ user.first_name|default:user.username }}</span>
                         <a href="{% url 'logout' %}" class="text-gray-600 hover:text-primary transition-colors">Logout</a>
                     {% endif %}
                 </div>
@@ -88,9 +95,49 @@
                 </div>
             </div>
 
+            <!-- Gamification Stats Bar -->
+            <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-6">
+                        <div class="flex items-center space-x-2">
+                            <i class="ri-fire-fill text-2xl text-orange-500"></i>
+                            <div>
+                                <div class="text-lg font-bold text-gray-900">{{ user_stats.current_streak }}</div>
+                                <div class="text-xs text-gray-600">Day Streak</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="ri-star-fill text-2xl text-yellow-500"></i>
+                            <div>
+                                <div class="text-lg font-bold text-gray-900">{{ user_stats.total_xp }}</div>
+                                <div class="text-xs text-gray-600">Total XP</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="ri-trophy-fill text-2xl text-purple-500"></i>
+                            <div>
+                                <div class="text-lg font-bold text-gray-900">Level {{ user_stats.level }}</div>
+                                <div class="text-xs text-gray-600">Current Level</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 max-w-xs ml-6">
+                        <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
+                            <span>Level {{ user_stats.level }}</span>
+                            <span>Level {{ user_stats.level|add:1 }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
+                                 style="width: {{ user_stats.xp_progress_percentage }}%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 text-center">{{ user_stats.xp_progress_percentage|floatformat:0 }}% to next level</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Progress Statistics -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-blue-50 p-6 rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-blue-50 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
                         <div>
                             <div class="text-2xl font-bold text-blue-600">{{ progress_stats.completed_weeks }}/{{ progress_stats.total_weeks }}</div>
@@ -106,12 +153,12 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="bg-green-50 p-6 rounded-lg">
+
+                <div class="bg-green-50 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
                         <div>
                             <div class="text-2xl font-bold text-green-600">{{ progress_stats.completed_activities }}/{{ progress_stats.total_activities }}</div>
-                            <div class="text-sm text-green-800">Activities Completed</div>
+                            <div class="text-sm text-green-800">Activities Done</div>
                         </div>
                         <div class="w-12 h-12">
                             <svg class="progress-ring w-12 h-12" viewBox="0 0 42 42">
@@ -123,8 +170,25 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="bg-purple-50 p-6 rounded-lg">
+
+                <div class="bg-red-50 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-red-600">{{ progress_stats.watched_videos }}/{{ progress_stats.total_videos }}</div>
+                            <div class="text-sm text-red-800">Videos Watched</div>
+                        </div>
+                        <div class="w-12 h-12">
+                            <svg class="progress-ring w-12 h-12" viewBox="0 0 42 42">
+                                <circle class="progress-ring-circle stroke-red-200" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"/>
+                                <circle class="progress-ring-circle stroke-red-600" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"
+                                        stroke-dasharray="{% widthratio progress_stats.videos_progress 100 119 %} 119"
+                                        stroke-dashoffset="0"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-purple-50 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
                         <div>
                             <div class="text-2xl font-bold text-purple-600">{{ progress_stats.weeks_progress|floatformat:0 }}%</div>
@@ -165,7 +229,24 @@
                                         Completed {{ week.completed_at|date:"M d" }}
                                     </span>
                                 {% endif %}
-                                <button onclick="toggleWeekCompletion({{ week.id }})" 
+
+                                <!-- Quiz Button -->
+                                {% if week.quiz %}
+                                    <a href="{% url 'quiz_detail' week.quiz.id %}"
+                                       class="flex items-center px-3 py-2 rounded-md text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors">
+                                        <i class="ri-file-list-3-line mr-1"></i>
+                                        Take Quiz
+                                    </a>
+                                {% else %}
+                                    <button onclick="generateQuiz({{ week.id }})"
+                                            id="quiz-btn-{{ week.id }}"
+                                            class="flex items-center px-3 py-2 rounded-md text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors">
+                                        <i class="ri-add-line mr-1"></i>
+                                        Generate Quiz
+                                    </button>
+                                {% endif %}
+
+                                <button onclick="toggleWeekCompletion({{ week.id }})"
                                         class="week-toggle-{{ week.id }} flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors
                                                {% if week.is_completed %}bg-green-100 text-green-700 hover:bg-green-200{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
                                     <i class="{% if week.is_completed %}ri-check-line{% else %}ri-circle-line{% endif %} mr-1"></i>
@@ -216,37 +297,53 @@
                                 </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {% for resource in week.resources.all %}
-                                        <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer"
-                                           class="group block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 hover:border-primary">
+                                        <div class="group block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 {% if resource.is_watched %}border-green-300 bg-green-50{% else %}hover:border-primary{% endif %}">
                                             <div class="flex">
                                                 {% if resource.thumbnail_url %}
                                                     <div class="w-32 h-24 flex-shrink-0 bg-gray-100 relative overflow-hidden">
-                                                        <img src="{{ resource.thumbnail_url }}" alt="{{ resource.title }}"
-                                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
-                                                        {% if resource.duration %}
-                                                            <span class="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
-                                                                {{ resource.duration }}
-                                                            </span>
-                                                        {% endif %}
+                                                        <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer">
+                                                            <img src="{{ resource.thumbnail_url }}" alt="{{ resource.title }}"
+                                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 {% if resource.is_watched %}opacity-75{% endif %}">
+                                                            {% if resource.duration %}
+                                                                <span class="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
+                                                                    {{ resource.duration }}
+                                                                </span>
+                                                            {% endif %}
+                                                            {% if resource.is_watched %}
+                                                                <div class="absolute inset-0 flex items-center justify-center bg-black/30">
+                                                                    <i class="ri-check-line text-white text-3xl"></i>
+                                                                </div>
+                                                            {% endif %}
+                                                        </a>
                                                     </div>
                                                 {% endif %}
-                                                <div class="flex-1 p-3">
-                                                    <h5 class="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-primary transition-colors">
-                                                        {{ resource.title }}
-                                                    </h5>
+                                                <div class="flex-1 p-3 flex flex-col">
+                                                    <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer">
+                                                        <h5 class="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-primary transition-colors {% if resource.is_watched %}line-through text-gray-600{% endif %}">
+                                                            {{ resource.title }}
+                                                        </h5>
+                                                    </a>
                                                     {% if resource.channel_name %}
                                                         <p class="text-xs text-gray-500 mt-1">{{ resource.channel_name }}</p>
                                                     {% endif %}
                                                     {% if resource.description %}
                                                         <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ resource.description }}</p>
                                                     {% endif %}
-                                                    <div class="flex items-center mt-2 text-xs text-gray-500">
-                                                        <i class="ri-external-link-line mr-1"></i>
-                                                        <span>Watch on YouTube</span>
+                                                    <div class="flex items-center justify-between mt-auto pt-2">
+                                                        <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer" class="flex items-center text-xs text-gray-500 hover:text-primary">
+                                                            <i class="ri-external-link-line mr-1"></i>
+                                                            <span>Watch on YouTube</span>
+                                                        </a>
+                                                        <button onclick="toggleVideoWatched(event, {{ resource.id }})"
+                                                                class="video-toggle-{{ resource.id }} flex items-center px-2 py-1 rounded text-xs font-medium transition-colors
+                                                                       {% if resource.is_watched %}bg-green-100 text-green-700 hover:bg-green-200{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                                                            <i class="{% if resource.is_watched %}ri-check-line{% else %}ri-eye-line{% endif %} mr-1"></i>
+                                                            {% if resource.is_watched %}Watched{% else %}Mark Watched{% endif %}
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </a>
+                                        </div>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -258,7 +355,58 @@
     </div>
 
     {% csrf_token %}
+
+    <!-- XP Notification Toast -->
+    <div id="xp-toast" class="fixed top-20 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-4 rounded-lg shadow-2xl transform translate-x-full transition-transform duration-300 z-50">
+        <div class="flex items-center space-x-3">
+            <i class="ri-star-fill text-2xl"></i>
+            <div>
+                <div class="font-bold text-lg" id="xp-amount">+10 XP</div>
+                <div class="text-sm opacity-90" id="xp-reason">Activity completed!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Up Notification -->
+    <div id="levelup-toast" class="fixed top-20 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-4 rounded-lg shadow-2xl transform translate-x-full transition-transform duration-300 z-50">
+        <div class="flex items-center space-x-3">
+            <i class="ri-trophy-fill text-3xl animate-bounce"></i>
+            <div>
+                <div class="font-bold text-xl">LEVEL UP!</div>
+                <div class="text-sm opacity-90" id="level-text">You reached Level 2!</div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function showXPNotification(xpAmount, reason, leveledUp = false, newLevel = 0) {
+            const toast = document.getElementById('xp-toast');
+            document.getElementById('xp-amount').textContent = '+' + xpAmount + ' XP';
+            document.getElementById('xp-reason').textContent = reason;
+
+            toast.classList.remove('translate-x-full');
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+
+                if (leveledUp) {
+                    setTimeout(() => showLevelUpNotification(newLevel), 300);
+                }
+            }, 3000);
+        }
+
+        function showLevelUpNotification(level) {
+            const toast = document.getElementById('levelup-toast');
+            document.getElementById('level-text').textContent = 'You reached Level ' + level + '!';
+
+            toast.classList.remove('translate-x-full');
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => location.reload(), 500);
+            }, 3000);
+        }
+
         async function toggleWeekCompletion(weekId) {
             try {
                 const response = await fetch('/toggle-week/' + weekId + '/', {
@@ -268,10 +416,22 @@
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 const data = await response.json();
                 if (data.success) {
-                    location.reload(); // Simple reload to update progress stats
+                    if (data.gamification) {
+                        showXPNotification(
+                            data.gamification.xp_awarded,
+                            data.gamification.reason,
+                            data.gamification.leveled_up,
+                            data.gamification.level
+                        );
+                        if (!data.gamification.leveled_up) {
+                            setTimeout(() => location.reload(), 3500);
+                        }
+                    } else {
+                        location.reload();
+                    }
                 }
             } catch (error) {
                 console.error('Error toggling week completion:', error);
@@ -287,13 +447,105 @@
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 const data = await response.json();
                 if (data.success) {
-                    location.reload(); // Simple reload to update progress stats
+                    if (data.gamification) {
+                        showXPNotification(
+                            data.gamification.xp_awarded,
+                            data.gamification.reason,
+                            data.gamification.leveled_up,
+                            data.gamification.level
+                        );
+                        if (!data.gamification.leveled_up) {
+                            setTimeout(() => location.reload(), 3500);
+                        }
+                    } else {
+                        location.reload();
+                    }
                 }
             } catch (error) {
                 console.error('Error toggling activity completion:', error);
+            }
+        }
+
+        async function toggleVideoWatched(event, resourceId) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            try {
+                const response = await fetch('/toggle-video/' + resourceId + '/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    if (data.gamification) {
+                        showXPNotification(
+                            data.gamification.xp_awarded,
+                            data.gamification.reason,
+                            data.gamification.leveled_up,
+                            data.gamification.level
+                        );
+                        if (!data.gamification.leveled_up) {
+                            setTimeout(() => location.reload(), 3500);
+                        }
+                    } else {
+                        location.reload();
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling video watched:', error);
+            }
+        }
+
+        async function generateQuiz(weekId) {
+            const button = document.getElementById('quiz-btn-' + weekId);
+            const originalHTML = button.innerHTML;
+
+            // Show loading state
+            button.disabled = true;
+            button.innerHTML = '<i class="ri-loader-4-line animate-spin mr-1"></i>Generating...';
+
+            try {
+                const response = await fetch('/generate-quiz/' + weekId + '/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        difficulty: 'medium',
+                        num_questions: 10
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Show success message
+                    button.innerHTML = '<i class="ri-check-line mr-1"></i>Quiz Created!';
+                    button.classList.remove('bg-purple-100', 'text-purple-700');
+                    button.classList.add('bg-green-100', 'text-green-700');
+
+                    // Redirect to quiz after a short delay
+                    setTimeout(() => {
+                        window.location.href = '/quiz/' + data.quiz_id + '/';
+                    }, 1000);
+                } else {
+                    // Show error
+                    alert(data.error || 'Failed to generate quiz');
+                    button.disabled = false;
+                    button.innerHTML = originalHTML;
+                }
+            } catch (error) {
+                console.error('Error generating quiz:', error);
+                alert('Failed to generate quiz. Please try again.');
+                button.disabled = false;
+                button.innerHTML = originalHTML;
             }
         }
     </script>

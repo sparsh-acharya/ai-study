@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - StudyPlan AI</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#10B981'}}}}</script>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .achievement-card {
+            transition: all 0.3s ease;
+        }
+        .achievement-card:hover {
+            transform: translateY(-4px);
+        }
+        .achievement-locked {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+        .achievement-unlocked {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .rarity-common { border-color: #9CA3AF; }
+        .rarity-rare { border-color: #3B82F6; }
+        .rarity-epic { border-color: #A855F7; }
+        .rarity-legendary { border-color: #F59E0B; }
+        
+        .rarity-common-bg { background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%); }
+        .rarity-rare-bg { background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%); }
+        .rarity-epic-bg { background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%); }
+        .rarity-legendary-bg { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'landing' %}" class="flex items-center">
+                        <span class="text-2xl font-['Pacifico'] text-primary">StudyPlan</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'study_plans' %}" class="text-gray-600 hover:text-primary transition-colors">
+                        <i class="ri-book-line mr-1"></i>My Study Plans
+                    </a>
+                    {% if user.is_authenticated %}
+                        <span class="text-gray-600">{{ user.first_name|default:user.username }}</span>
+                        <a href="{% url 'logout' %}" class="text-gray-600 hover:text-primary transition-colors">Logout</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Header with Level Info -->
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">Level {{ user_stats.level }} Scholar</h1>
+                    <p class="text-purple-100 text-lg">{{ user.first_name|default:user.username }}'s Progress Dashboard</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <div class="text-center">
+                            <i class="ri-trophy-fill text-6xl"></i>
+                            <div class="text-2xl font-bold">{{ user_stats.level }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- XP Progress Bar -->
+            <div class="mt-6">
+                <div class="flex items-center justify-between text-sm mb-2">
+                    <span>Level {{ user_stats.level }}</span>
+                    <span>{{ user_stats.total_xp }} XP</span>
+                    <span>Level {{ user_stats.level|add:1 }}</span>
+                </div>
+                <div class="w-full bg-white/20 rounded-full h-4 backdrop-blur-sm">
+                    <div class="bg-white h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2" 
+                         style="width: {{ user_stats.xp_progress_percentage }}%">
+                        <span class="text-xs font-bold text-purple-600">{{ user_stats.xp_progress_percentage|floatformat:0 }}%</span>
+                    </div>
+                </div>
+                <p class="text-sm text-purple-100 mt-2 text-center">
+                    {{ user_stats.xp_for_next_level|floatformat:0 }} XP needed for next level
+                </p>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Current Streak</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ user_stats.current_streak }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Longest: {{ user_stats.longest_streak }} days</p>
+                    </div>
+                    <i class="ri-fire-fill text-5xl text-orange-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Activities Done</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ user_stats.total_activities_completed }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Keep it up!</p>
+                    </div>
+                    <i class="ri-checkbox-circle-fill text-5xl text-green-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Weeks Completed</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ user_stats.total_weeks_completed }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Amazing progress!</p>
+                    </div>
+                    <i class="ri-calendar-check-fill text-5xl text-blue-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Videos Watched</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ user_stats.total_videos_watched }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Learning machine!</p>
+                    </div>
+                    <i class="ri-youtube-fill text-5xl text-red-500"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Statistics -->
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl shadow-lg p-8 mb-8 text-white">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="ri-file-list-3-fill mr-3"></i>
+                Quiz Performance
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm opacity-90">Quizzes Completed</p>
+                        <i class="ri-checkbox-circle-line text-2xl"></i>
+                    </div>
+                    <p class="text-4xl font-bold">{{ user_stats.total_quizzes_completed }}</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm opacity-90">Quizzes Passed</p>
+                        <i class="ri-trophy-line text-2xl"></i>
+                    </div>
+                    <p class="text-4xl font-bold">{{ user_stats.total_quizzes_passed }}</p>
+                    <p class="text-xs opacity-75 mt-1">
+                        {% if user_stats.total_quizzes_completed > 0 %}
+                            {{ user_stats.total_quizzes_passed|floatformat:0 }}/{{ user_stats.total_quizzes_completed }}
+                            ({% widthratio user_stats.total_quizzes_passed user_stats.total_quizzes_completed 100 %}%)
+                        {% else %}
+                            No quizzes yet
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm opacity-90">Perfect Scores</p>
+                        <i class="ri-star-fill text-2xl"></i>
+                    </div>
+                    <p class="text-4xl font-bold">{{ user_stats.total_perfect_scores }}</p>
+                    <p class="text-xs opacity-75 mt-1">100% accuracy! 💯</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm opacity-90">Current Streak</p>
+                        <i class="ri-fire-fill text-2xl"></i>
+                    </div>
+                    <p class="text-4xl font-bold">{{ user_stats.current_quiz_streak }}</p>
+                    <p class="text-xs opacity-75 mt-1">Longest: {{ user_stats.longest_quiz_streak }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements Section -->
+        <div class="bg-white rounded-xl shadow-sm p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+                    <i class="ri-trophy-line text-yellow-500 mr-3"></i>
+                    Achievements
+                </h2>
+                <div class="text-sm text-gray-600">
+                    <span class="font-semibold">{{ user_stats.recent_achievements|length }}</span> unlocked
+                </div>
+            </div>
+
+            <!-- Achievement Filters -->
+            <div class="flex space-x-2 mb-6">
+                <button onclick="filterAchievements('all')" class="filter-btn px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium">
+                    All
+                </button>
+                <button onclick="filterAchievements('unlocked')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200">
+                    Unlocked
+                </button>
+                <button onclick="filterAchievements('locked')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200">
+                    Locked
+                </button>
+            </div>
+
+            <!-- Achievements Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for item in achievements_data %}
+                    <div class="achievement-card achievement-{{ item.achievement.rarity }} {% if item.unlocked %}achievement-unlocked{% else %}achievement-locked{% endif %}
+                                bg-white border-2 rarity-{{ item.achievement.rarity }} rounded-lg p-4 rarity-{{ item.achievement.rarity }}-bg"
+                         data-unlocked="{{ item.unlocked|yesno:'true,false' }}">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <i class="{{ item.achievement.icon }} text-4xl {% if item.unlocked %}text-yellow-500{% else %}text-gray-400{% endif %}"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h3 class="text-sm font-bold text-gray-900 truncate">{{ item.achievement.name }}</h3>
+                                    {% if item.user_achievement and item.user_achievement.is_new %}
+                                        <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">NEW!</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-xs text-gray-600 mb-2">{{ item.achievement.description }}</p>
+                                <div class="flex items-center justify-between">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold
+                                                {% if item.achievement.rarity == 'common' %}bg-gray-200 text-gray-700
+                                                {% elif item.achievement.rarity == 'rare' %}bg-blue-200 text-blue-700
+                                                {% elif item.achievement.rarity == 'epic' %}bg-purple-200 text-purple-700
+                                                {% elif item.achievement.rarity == 'legendary' %}bg-yellow-200 text-yellow-700{% endif %}">
+                                        {{ item.achievement.get_rarity_display }}
+                                    </span>
+                                    <span class="text-xs font-bold text-gray-700">
+                                        <i class="ri-star-fill text-yellow-500"></i> +{{ item.achievement.xp_reward }} XP
+                                    </span>
+                                </div>
+                                {% if item.unlocked and item.user_achievement %}
+                                    <p class="text-xs text-green-600 mt-2 font-medium">
+                                        <i class="ri-check-line"></i> Unlocked {{ item.user_achievement.unlocked_at|date:"M d, Y" }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        {% if user_stats.recent_achievements %}
+        <div class="bg-white rounded-xl shadow-sm p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                <i class="ri-time-line text-primary mr-3"></i>
+                Recent Achievements
+            </h2>
+            <div class="space-y-4">
+                {% for user_achievement in user_stats.recent_achievements %}
+                    <div class="flex items-center space-x-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                        <i class="{{ user_achievement.achievement.icon }} text-3xl text-yellow-500"></i>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900">{{ user_achievement.achievement.name }}</h3>
+                            <p class="text-sm text-gray-600">{{ user_achievement.achievement.description }}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-bold text-purple-600">+{{ user_achievement.achievement.xp_reward }} XP</div>
+                            <div class="text-xs text-gray-500">{{ user_achievement.unlocked_at|timesince }} ago</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function filterAchievements(filter) {
+            const cards = document.querySelectorAll('.achievement-card');
+            const buttons = document.querySelectorAll('.filter-btn');
+
+            // Update button styles
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            event.target.classList.remove('bg-gray-100', 'text-gray-700');
+            event.target.classList.add('bg-primary', 'text-white');
+
+            // Filter cards
+            cards.forEach(card => {
+                const isUnlocked = card.dataset.unlocked === 'true';
+
+                if (filter === 'all') {
+                    card.style.display = 'block';
+                } else if (filter === 'unlocked' && isUnlocked) {
+                    card.style.display = 'block';
+                } else if (filter === 'locked' && !isUnlocked) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Mark achievements as seen when page loads
+        window.addEventListener('load', async () => {
+            try {
+                await fetch('/mark-achievements-seen/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } catch (error) {
+                console.error('Error marking achievements as seen:', error);
+            }
+        });
+    </script>
+</body>
+</html>
+
