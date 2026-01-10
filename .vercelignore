@@ -4,3 +4,7 @@ __pycache__
 db.sqlite3
 .git
 .gitignore
+# New ignored folders
+media
+pdf
+staticfiles
