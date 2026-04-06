@@ -1,172 +1,286 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Results - StudyPlan AI</title>
+    <title>Battle Results: {{ attempt.quiz.title }} — StudyQuest</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#10B981'}}}}</script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .confetti {
-            animation: confetti-fall 3s ease-out forwards;
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { retro: { bg: '#fdf6e3', border: '#1a1a1a', pink: '#ff90e8', cyan: '#00f0ff', green: '#22c55e', yellow: '#ffc900', purple: '#b19cd9', blue: '#90b4fe' } },
+                    boxShadow: { 'brutal': '4px 4px 0px 0px rgba(26,26,26,1)', 'brutal-lg': '8px 8px 0px 0px rgba(26,26,26,1)', 'brutal-sm': '2px 2px 0px 0px rgba(26,26,26,1)' },
+                    animation: { 'bounce-slow': 'bounce 3s infinite' }
+                }
+            }
         }
-        @keyframes confetti-fall {
-            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #fdf6e3;
+            color: #1a1a1a;
+            cursor: crosshair;
+        }
+
+        .pixel-font {
+            font-family: 'VT323', monospace;
+        }
+
+        .brutal-card {
+            background: white;
+            border: 3px solid #1a1a1a;
+            box-shadow: 6px 6px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .brutal-btn {
+            background: #1a1a1a;
+            color: white;
+            border: 3px solid #1a1a1a;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
+            transition: all 0.1s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brutal-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .brutal-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(#1a1a1a 1px, transparent 1px), linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: -1px -1px;
+            background-color: #fdf6e3;
+            opacity: 0.05;
+        }
+
+        .win-frame {
+            border: 3px solid #1a1a1a;
+            background: white;
+        }
+
+        .win-title {
+            background: #1a1a1a;
+            color: white;
+            padding: 4px 12px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #1a1a1a;
+        }
+
+        @keyframes scaleUp {
+            from {
+                transform: scale(0.5) rotate(-5deg);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1) rotate(2deg);
+                opacity: 1;
+            }
+        }
+
+        .score-pop {
+            animation: scaleUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
+
+<body class="relative min-h-screen">
+    <!-- Grid -->
+    <div class="fixed inset-0 grid-bg pointer-events-none -z-10"></div>
+
+    <!-- Nav -->
+    <nav class="fixed top-0 w-full bg-[#fdf6e3] border-b-4 border-retro-border z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="{% url 'landing' %}" class="flex items-center">
-                        <span class="text-2xl font-['Pacifico'] text-primary">StudyPlan</span>
-                    </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{% url 'quiz_detail' attempt.quiz.id %}" class="text-gray-600 hover:text-primary transition-colors">
-                        <i class="ri-arrow-left-line mr-1"></i>Back to Quiz
-                    </a>
-                    <a href="{% url 'study_plan_detail' attempt.quiz.study_plan.id %}" class="text-gray-600 hover:text-primary transition-colors">
-                        Study Plan
-                    </a>
-                </div>
+            <div class="flex justify-between h-16 items-center">
+                <a href="{% url 'study_plan_detail' attempt.quiz.study_plan.id %}" class="flex items-center space-x-2">
+                    <div
+                        class="w-8 h-8 bg-retro-yellow border-2 border-retro-border flex items-center justify-center shadow-brutal-sm">
+                        <i class="ri-arrow-left-box-fill font-bold"></i>
+                    </div>
+                </a>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <!-- Results Header -->
-        <div class="{% if attempt.passed %}bg-gradient-to-r from-green-500 to-emerald-600{% else %}bg-gradient-to-r from-orange-500 to-red-600{% endif %} rounded-2xl shadow-xl p-8 mb-8 text-white relative overflow-hidden">
-            {% if attempt.passed %}
-            <!-- Confetti for passing -->
-            <div class="absolute inset-0 pointer-events-none">
-                <div class="confetti absolute top-0 left-1/4 w-2 h-2 bg-yellow-300 rounded-full"></div>
-                <div class="confetti absolute top-0 left-1/2 w-2 h-2 bg-pink-300 rounded-full" style="animation-delay: 0.2s"></div>
-                <div class="confetti absolute top-0 left-3/4 w-2 h-2 bg-blue-300 rounded-full" style="animation-delay: 0.4s"></div>
+    <!-- Main Content -->
+    <div class="max-w-3xl mx-auto px-4 pt-24 pb-32">
+
+        <!-- Results Header Card -->
+        <div class="win-frame shadow-brutal-lg mb-12 bg-white text-center transform rotate-1">
+            <div
+                class="win-title {% if attempt.passed %}bg-retro-green{% else %}bg-[#ff5722]{% endif %} text-retro-border">
+                <span>BATTLE_REPORT.log</span>
             </div>
-            {% endif %}
-            
-            <div class="relative z-10">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 class="text-4xl font-bold mb-2">
-                            {% if attempt.passed %}
-                                🎉 Congratulations!
-                            {% else %}
-                                Keep Trying!
-                            {% endif %}
-                        </h1>
-                        <p class="text-lg opacity-90">{{ attempt.quiz.title }}</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                            <div>
-                                <div class="text-5xl font-bold">{{ attempt.percentage|floatformat:0 }}%</div>
-                                <div class="text-sm">Score</div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="p-8">
+                <!-- Status Icon -->
+                <div
+                    class="w-24 h-24 mx-auto mb-6 {% if attempt.passed %}bg-retro-green{% else %}bg-[#ff5722]{% endif %} border-4 border-retro-border flex items-center justify-center text-5xl shadow-brutal-sm {% if attempt.passed %}animate-bounce-slow{% endif %}">
+                    {% if attempt.passed %}🏆{% else %}💀{% endif %}
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                        <div class="text-sm opacity-75">Score</div>
-                        <div class="text-2xl font-bold">{{ attempt.score }}/{{ attempt.max_score }}</div>
+                <h1 class="text-3xl font-bold font-['Space_Grotesk'] tracking-widest uppercase mb-2">
+                    {% if attempt.passed %}VICTORY ACHIEVED!{% else %}DEFEAT...{% endif %}
+                </h1>
+                <p class="text-gray-600 font-medium mb-8">Boss: {{ attempt.quiz.title }}</p>
+
+                <!-- Score Board -->
+                <div
+                    class="bg-[#f0f9ff] border-3 border-retro-border p-6 shadow-brutal inline-block w-full max-w-sm transform -rotate-2 score-pop mx-auto">
+                    <div
+                        class="pixel-font font-bold text-gray-500 uppercase tracking-widest mb-1 text-sm border-b-2 border-dashed border-gray-300 pb-2">
+                        Final Damage Output</div>
+                    <div
+                        class="text-7xl font-bold font-['Space_Grotesk'] mt-2 mb-2 {% if attempt.passed %}text-retro-green{% else %}text-[#ff5722]{% endif %}">
+                        {{ attempt.percentage|floatformat:0 }}<span class="text-3xl">%</span>
                     </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                        <div class="text-sm opacity-75">Time Taken</div>
-                        <div class="text-2xl font-bold">{{ attempt.time_taken_formatted }}</div>
+                    <div class="pixel-font text-xl text-retro-border mb-4">
+                        {{ attempt.score }} / {{ attempt.max_score }} DMG
                     </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                        <div class="text-sm opacity-75">Status</div>
-                        <div class="text-2xl font-bold">{% if attempt.passed %}Passed ✓{% else %}Failed{% endif %}</div>
+
+                    <div class="flex justify-between items-center bg-[#fdf6e3] border-2 border-retro-border p-2">
+                        <span class="text-xs font-bold uppercase">Time Elapsed</span>
+                        <span class="pixel-font text-lg">{{ attempt.time_taken_formatted }}</span>
                     </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                        <div class="text-sm opacity-75">XP Earned</div>
-                        <div class="text-2xl font-bold">{% if attempt.passed %}+{{ attempt.xp_awarded }}{% else %}0{% endif %}</div>
+                    {% if attempt.passed %}
+                    <div
+                        class="flex justify-between items-center bg-retro-yellow border-2 border-retro-border p-2 mt-2 font-bold animate-pulse">
+                        <span class="text-xs uppercase">Loot Gained</span>
+                        <span class="pixel-font text-lg text-retro-pink">+{{ attempt.xp_awarded }} XP</span>
                     </div>
+                    {% endif %}
+                </div>
+
+                <!-- Next Action -->
+                <div class="mt-10">
+                    <a href="{% url 'study_plan_detail' attempt.quiz.study_plan.id %}"
+                        class="brutal-btn bg-retro-blue text-retro-border px-8 py-4 text-xl">
+                        <i class="ri-arrow-go-back-line mr-2"></i> RETURN TO MAP
+                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- Detailed Results -->
-        <div class="bg-white rounded-xl shadow-sm p-8 mb-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <i class="ri-file-list-3-line text-primary mr-3"></i>
-                Detailed Results
+        <!-- Breakdown Section -->
+        <div class="border-t-4 border-dashed border-gray-400 pt-8 mb-8">
+            <h2
+                class="text-2xl font-bold font-['Space_Grotesk'] tracking-tight mb-6 bg-white inline-block px-4 py-2 border-2 border-retro-border shadow-brutal transform -rotate-1">
+                <i class="ri-search-eye-line text-retro-pink"></i> COMBAT LOG
             </h2>
 
             <div class="space-y-6">
                 {% for result in results %}
-                <div class="border-2 {% if result.is_correct %}border-green-200 bg-green-50{% else %}border-red-200 bg-red-50{% endif %} rounded-xl p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900 flex-1">
-                            <span class="text-gray-500 mr-2">Q{{ forloop.counter }}.</span>
-                            {{ result.question.question_text }}
-                        </h3>
-                        <div class="ml-4">
-                            {% if result.is_correct %}
-                                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                                    <i class="ri-check-line text-white text-xl"></i>
+                <div
+                    class="win-frame shadow-brutal {% if result.is_correct %}bg-[#f0fdf4] border-l-8 border-l-retro-green{% else %}bg-[#fff1f2] border-l-8 border-l-[#ff5722]{% endif %}">
+                    <div
+                        class="win-title text-sm {% if result.is_correct %}bg-retro-green{% else %}bg-[#ff5722]{% endif %} text-retro-border py-2 px-3">
+                        <span>STRIKE {{ forloop.counter }}</span>
+                        <span class="pixel-font">{{ result.question.points }} DMG</span>
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="font-bold text-lg mb-4">{{ result.question.question_text }}</h3>
+
+                        <div class="space-y-3">
+                            {% for answer in result.question.answers.all %}
+                            {% if answer.id == result.user_answer.id and answer.id == result.correct_answer.id %}
+                            <!-- Correct Answer Selected -->
+                            <div
+                                class="flex items-center p-3 border-2 border-retro-green bg-green-100 shadow-brutal-sm transform hover:translate-x-1 transition-transform">
+                                <div
+                                    class="w-6 h-6 bg-retro-green border-2 border-retro-border flex items-center justify-center text-retro-border mr-3 flex-shrink-0 animate-pulse">
+                                    <i class="ri-check-line font-bold"></i>
                                 </div>
+                                <p class="font-semibold text-green-900">{{ answer.answer_text }}</p>
+                            </div>
+                            {% elif answer.id == result.user_answer.id %}
+                            <!-- Wrong Answer Selected -->
+                            <div
+                                class="flex items-center p-3 border-2 border-[#ff5722] bg-red-100 shadow-brutal-sm transform hover:translate-x-1 transition-transform">
+                                <div
+                                    class="w-6 h-6 bg-[#ff5722] border-2 border-retro-border flex items-center justify-center text-white mr-3 flex-shrink-0">
+                                    <i class="ri-close-line font-bold"></i>
+                                </div>
+                                <p class="font-semibold text-red-900 line-through">{{ answer.answer_text }}</p>
+                            </div>
+                            {% elif answer.id == result.correct_answer.id %}
+                            <!-- Correct Answer Not Selected -->
+                            <div
+                                class="flex items-center p-3 border-2 border-retro-green border-dashed bg-white shadow-brutal-sm transform hover:translate-x-1 transition-transform">
+                                <div
+                                    class="w-6 h-6 bg-white border-2 border-retro-green flex items-center justify-center text-retro-green mr-3 flex-shrink-0">
+                                    <i class="ri-check-line font-bold"></i>
+                                </div>
+                                <p class="font-semibold text-green-700 italic">{{ answer.answer_text }}</p>
+                            </div>
                             {% else %}
-                                <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
-                                    <i class="ri-close-line text-white text-xl"></i>
-                                </div>
+                            <!-- Other Options -->
+                            <div class="flex items-center p-3 border-2 border-gray-300 bg-white">
+                                <div class="w-6 h-6 bg-[#f4f4f4] border-2 border-gray-300 mr-3 flex-shrink-0"></div>
+                                <p class="font-medium text-gray-500">{{ answer.answer_text }}</p>
+                            </div>
                             {% endif %}
+                            {% endfor %}
                         </div>
                     </div>
-
-                    <div class="space-y-2 mb-4">
-                        {% for answer in result.question.answers.all %}
-                        <div class="p-3 rounded-lg {% if answer.is_correct %}bg-green-100 border-2 border-green-300{% elif answer == result.user_answer %}bg-red-100 border-2 border-red-300{% else %}bg-white border border-gray-200{% endif %}">
-                            <div class="flex items-center justify-between">
-                                <span class="{% if answer.is_correct %}font-semibold text-green-900{% elif answer == result.user_answer %}font-semibold text-red-900{% else %}text-gray-700{% endif %}">
-                                    {{ answer.answer_text }}
-                                </span>
-                                {% if answer.is_correct %}
-                                    <span class="text-green-600 font-semibold text-sm">✓ Correct Answer</span>
-                                {% elif answer == result.user_answer %}
-                                    <span class="text-red-600 font-semibold text-sm">✗ Your Answer</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    {% if result.question.explanation %}
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                        <div class="flex items-start">
-                            <i class="ri-lightbulb-line text-blue-500 text-xl mr-3 mt-1"></i>
-                            <div>
-                                <div class="font-semibold text-blue-900 mb-1">Explanation</div>
-                                <div class="text-blue-800 text-sm">{{ result.question.explanation }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
         </div>
-
-        <!-- Actions -->
-        <div class="flex justify-center space-x-4">
-            <a href="{% url 'quiz_detail' attempt.quiz.id %}" class="px-8 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-semibold">
-                <i class="ri-refresh-line mr-2"></i>Retake Quiz
-            </a>
-            <a href="{% url 'study_plan_detail' attempt.quiz.study_plan.id %}" class="px-8 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all font-semibold">
-                <i class="ri-arrow-left-line mr-2"></i>Back to Study Plan
-            </a>
-        </div>
     </div>
-</body>
-</html>
 
+    <!-- Celebration Logic -->
+    {% if attempt.passed %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var duration = 3000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                // Retro 8-bit colors
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#00f0ff', '#ff90e8', '#ffc900', '#22c55e']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#00f0ff', '#ff90e8', '#ffc900', '#22c55e']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        });
+    </script>
+    {% endif %}
+</body>
+
+</html>

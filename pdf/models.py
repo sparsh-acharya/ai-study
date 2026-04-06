@@ -330,8 +330,13 @@ class Quiz(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Boss Battle fields
+    is_boss = models.BooleanField(default=False)
+    boss_name = models.CharField(max_length=255, null=True, blank=True)
+    boss_sprite = models.CharField(max_length=50, null=True, blank=True, help_text="Sprite identifier (e.g. dragon, hydra)")
+
     def __str__(self):
-        return f"{self.title} - {self.study_plan.subject}"
+        return f"{self.title} - {self.study_plan.course_name}"
 
     @property
     def total_questions(self):
@@ -412,6 +417,11 @@ class QuizAttempt(models.Model):
 
     xp_awarded = models.IntegerField(default=0)
 
+    # Boss Battle state
+    boss_hp = models.IntegerField(default=100)
+    player_hp = models.IntegerField(default=100)
+    is_victory = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.user.username} - {self.quiz.title} - {self.score}/{self.max_score}"
 
@@ -455,3 +465,44 @@ class QuizAttempt(models.Model):
 
     class Meta:
         ordering = ['-started_at']
+
+
+class DailyQuest(models.Model):
+    """Template for a repeating daily objective"""
+    QUEST_TYPES = [
+        ('ACTIVITY', 'Complete Activities'),
+        ('QUIZ', 'Answer Quiz Questions'),
+        ('LOGIN', 'Daily Check-in'),
+    ]
+
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    quest_type = models.CharField(max_length=20, choices=QUEST_TYPES)
+    goal_count = models.IntegerField(default=1)
+    reward_xp = models.IntegerField(default=50)
+
+    def __str__(self):
+        return self.title
+
+
+class UserDailyQuest(models.Model):
+    """Tracks progress for a specific user quest on a specific day"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='daily_quests')
+    quest = models.ForeignKey(DailyQuest, on_delete=models.CASCADE)
+    date = models.DateField(default=timezone.now)
+    current_count = models.IntegerField(default=0)
+    is_completed = models.BooleanField(default=False)
+    is_rewarded = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['user', 'quest', 'date']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.quest.title} ({self.date})"
+
+    @property
+    def progress_percentage(self):
+        if self.quest.goal_count == 0:
+            return 100
+        return min(100, int((self.current_count / self.quest.goal_count) * 100))
+

@@ -1,643 +1,551 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Document - StudyPlan AI</title>
+    <title>Summon Quest (Legacy) — StudyQuest</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#10B981'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { retro: { bg: '#fdf6e3', border: '#1a1a1a', pink: '#ff90e8', cyan: '#00f0ff', green: '#22c55e', yellow: '#ffc900', purple: '#b19cd9', blue: '#90b4fe' } },
+                    boxShadow: { 'brutal': '4px 4px 0px 0px rgba(26,26,26,1)', 'brutal-lg': '8px 8px 0px 0px rgba(26,26,26,1)', 'brutal-sm': '2px 2px 0px 0px rgba(26,26,26,1)' },
+                    animation: { 'bounce-slow': 'bounce 3s infinite', 'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
-        :where([class^="ri-"])::before { content: "\f3c2"; }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #fdf6e3;
+            color: #1a1a1a;
+            cursor: crosshair;
         }
-        .drag-drop-zone {
-            border: 2px dashed #e5e7eb;
-            transition: all 0.3s ease;
+
+        .pixel-font {
+            font-family: 'VT323', monospace;
         }
-        .drag-drop-zone.dragging {
-            border-color: #4F46E5;
-            background-color: rgba(79, 70, 229, 0.05);
+
+        .brutal-card {
+            background: white;
+            border: 3px solid #1a1a1a;
+            box-shadow: 6px 6px 0px 0px rgba(26, 26, 26, 1);
         }
-        .file-input {
-            opacity: 0;
-            position: absolute;
+
+        .brutal-btn {
+            background: #1a1a1a;
+            color: white;
+            border: 3px solid #1a1a1a;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
+            transition: all 0.1s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brutal-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .brutal-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(#1a1a1a 1px, transparent 1px), linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: -1px -1px;
+            background-color: #fdf6e3;
+            opacity: 0.05;
+        }
+
+        .win-frame {
+            border: 3px solid #1a1a1a;
+            background: white;
+        }
+
+        .win-title {
+            background: #1a1a1a;
+            color: white;
+            padding: 4px 12px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #1a1a1a;
+        }
+
+        /* Upload Area */
+        .drop-zone {
+            border: 4px dashed #1a1a1a;
+            transition: all 0.2s;
+            background: #fdf6e3;
+        }
+
+        .drop-zone.dragover {
+            background: #ff90e8;
+            border-color: #1a1a1a;
+            border-style: solid;
+            box-shadow: inset 8px 8px 0px 0px rgba(26, 26, 26, 0.1);
+        }
+
+        .xp-bar-container {
+            background: white;
+            border: 2px solid #1a1a1a;
+            height: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .xp-bar-fill {
+            height: 100%;
+            border-right: 2px solid #1a1a1a;
+            transition: width 0.3s ease;
+            background: #00f0ff;
+        }
+
+        /* Scanlines overlay */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            cursor: pointer;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.05));
+            background-size: 100% 4px;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0.5;
         }
-        .progress-bar {
-            transition: width 0.3s ease;
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .cursor-blink {
+            animation: blink 1s step-end infinite;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
+
+<body class="relative min-h-screen">
+    <!-- Grid & Scanlines -->
+    <div class="fixed inset-0 grid-bg pointer-events-none -z-10"></div>
+    <div class="scanlines"></div>
+
+    <!-- Nav -->
+    <nav class="fixed top-0 w-full bg-[#fdf6e3] border-b-4 border-retro-border z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="{% url 'landing' %}" class="flex items-center">
-                        <span class="text-2xl font-['Pacifico'] text-primary">StudyPlan</span>
-                    </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    {% if user.is_authenticated %}
-                        <span class="text-gray-600">Welcome, {{ user.first_name|default:user.username }}!</span>
-                        <a href="{% url 'logout' %}" class="text-gray-600 hover:text-primary transition-colors">Logout</a>
-                    {% endif %}
-                    <a href="{% url 'landing' %}" class="text-gray-600 hover:text-primary transition-colors">Back to Home</a>
+            <div class="flex justify-between h-16 items-center">
+                <a href="{% url 'landing' %}" class="flex items-center space-x-2">
+                    <div
+                        class="w-8 h-8 bg-retro-pink border-2 border-retro-border flex items-center justify-center shadow-brutal-sm">
+                        <i class="ri-gamepad-line font-bold"></i>
+                    </div>
+                    <span class="text-3xl font-bold tracking-tight pixel-font mt-1">STUDYQUEST</span>
+                </a>
+                <div class="hidden lg:flex items-center space-x-6">
+                    <a href="{% url 'study_plans' %}"
+                        class="font-bold hover:underline decoration-4 underline-offset-4 decoration-retro-pink">My
+                        Quests</a>
+                    <a href="{% url 'user_dashboard' %}"
+                        class="font-bold hover:underline decoration-4 underline-offset-4 decoration-retro-yellow">Dashboard</a>
+                    <div
+                        class="w-8 h-8 bg-retro-green border-2 border-retro-border flex items-center justify-center font-bold shadow-brutal-sm">
+                        {{ user.first_name.0|default:user.username.0|upper }}
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Upload Section -->
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Upload Your Document</h1>
-            <p class="mt-4 text-xl text-gray-600">We support PDF and PowerPoint files</p>
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 pt-24 pb-32">
+        <div
+            class="fixed top-24 right-12 w-24 h-24 bg-retro-yellow border-4 border-retro-border shadow-brutal transform rotate-12 flex items-center justify-center text-4xl hidden lg:flex animate-bounce-slow z-0">
+            📚
         </div>
 
-        <!-- Upload Zone -->
-        <div class="bg-white rounded-lg shadow-sm p-8">
-            <form id="uploadForm" method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div id="uploadSection" class="drag-drop-zone rounded-lg p-8 text-center cursor-pointer relative">
-                    <input type="file" class="file-input" accept=".pdf" id="fileInput" name="file">
-                    <div class="space-y-4">
-                        <div class="w-16 h-16 bg-primary/10 rounded-full mx-auto flex items-center justify-center">
-                            <i class="ri-file-pdf-line ri-2x text-primary"></i>
-                        </div>
-                        <div>
-                            <p class="text-lg font-medium text-gray-900">Drag and drop your PDF file here</p>
-                            <p class="text-gray-600 mt-1">or click to browse</p>
-                        </div>
-                        <p class="text-sm text-gray-500">Maximum file size: 50MB</p>
-                    </div>
-                </div>
+        <div class="text-center mb-10 relative z-10">
+            <h1 class="text-4xl md:text-5xl font-bold font-['Space_Grotesk'] tracking-tight mb-4 uppercase">Summon <span
+                    class="bg-retro-pink text-retro-border px-2 transform -rotate-2 inline-block shadow-brutal-sm border-2 border-retro-border">New
+                    Quest</span></h1>
+            <p class="text-xl text-gray-700 max-w-2xl mx-auto font-medium">Drop your manuscript (PDF) into the forge to
+                synthesize a structured learning path.</p>
+            <div
+                class="mt-4 inline-block bg-white border-2 border-retro-border font-bold text-sm p-1 px-3 shadow-brutal-sm transform rotate-1">
+                MAX_FILE_SIZE = 50MB
+            </div>
+        </div>
 
-                <!-- Upload Progress (Initially Hidden) -->
-                <div id="uploadProgress" class="mt-6 hidden">
-                    <div class="flex items-center">
-                        <div class="flex-1">
-                            <div class="bg-gray-200 rounded-full h-2">
-                                <div class="progress-bar bg-primary h-2 rounded-full" style="width: 0%"></div>
-                            </div>
+        <!-- Upload Window -->
+        <div class="win-frame shadow-brutal-lg max-w-2xl mx-auto bg-white relative z-10 relative">
+            <div class="win-title bg-retro-blue text-retro-border py-3">
+                <span>FORGE_ENTRY.exe</span>
+                <i class="ri-upload-cloud-fill"></i>
+            </div>
+
+            <div class="p-8">
+                <form id="upload-form" action="{% url 'upload' %}" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div id="drop-zone"
+                        class="drop-zone p-12 text-center cursor-pointer relative overflow-hidden group">
+                        <!-- BG pattern on hover -->
+                        <div
+                            class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiMxYTFhMWEiLz48L3N2Zz4=')] opacity-0 group-hover:opacity-10 transition-opacity">
                         </div>
-                        <span class="ml-4 text-sm text-gray-600">0%</span>
+
+                        <div
+                            class="w-20 h-20 mx-auto bg-white border-3 border-retro-border shadow-brutal flex items-center justify-center text-4xl mb-6 relative z-10 group-hover:-translate-y-2 transition-transform">
+                            <i
+                                class="ri-file-pdf-fill text-retro-pink group-hover:text-retro-blue transition-colors"></i>
+                        </div>
+                        <p class="text-xl font-bold mb-2 relative z-10">DROP SCHOLARLY MANUSCRIPT HERE</p>
+                        <p class="text-gray-500 font-bold uppercase text-xs tracking-widest relative z-10">OR CLICK TO
+                            BROWSE INVENTORY</p>
+                        <input type="file" id="file-input" name="file" accept=".pdf" class="hidden" required>
                     </div>
-                    <div class="mt-2 flex items-center justify-between text-sm">
-                        <span class="text-gray-600" id="fileName">filename.pdf</span>
-                        <button class="text-red-600 hover:text-red-700" id="cancelUpload">
-                            Cancel
+
+                    <!-- File Info -->
+                    <div id="file-info"
+                        class="hidden mt-6 bg-[#f0f9ff] border-2 border-retro-border p-4 shadow-brutal-sm flex items-center">
+                        <div
+                            class="w-10 h-10 bg-retro-blue border-2 border-retro-border flex items-center justify-center flex-shrink-0 mr-4">
+                            <i class="ri-file-text-line font-bold"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p id="file-name" class="font-bold truncate text-lg"></p>
+                            <p id="file-size" class="text-xs font-bold uppercase text-gray-500 tracking-wider"></p>
+                        </div>
+                        <button type="button" id="remove-file"
+                            class="ml-4 w-8 h-8 bg-red-100 border-2 border-red-500 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
+                            <i class="ri-close-line font-bold"></i>
                         </button>
                     </div>
-                </div>
 
-                <!-- Upload Success (Initially Hidden) -->
-                <div id="uploadSuccess" class="mt-6 hidden">
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="ri-file-pdf-line ri-2x text-green-600"></i>
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-green-800" id="successFileName"></h3>
-                                <p class="text-sm text-green-700">Successfully uploaded</p>
-                                <a href="#" id="viewPdfLink" class="text-sm text-primary hover:text-primary/80 mt-1 flex items-center" target="_blank">
-                                    <i class="ri-eye-line mr-1"></i> View PDF
-                                </a>
-                            </div>
-                            <div class="ml-auto">
-                                <button id="analyzeButton" class="text-sm font-medium text-primary hover:text-primary/80 flex items-center">
-                                    <i class="ri-ai-generate mr-1"></i> Analyze
-                                </button>
-                            </div>
+                    <!-- Options -->
+                    <div id="upload-options" class="hidden mt-6 border-t-2 border-dashed border-gray-300 pt-6">
+                        <label class="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Item
+                            Type</label>
+                        <select name="document_type"
+                            class="w-full bg-[#fdf6e3] border-2 border-retro-border p-3 font-bold focus:outline-none focus:ring-4 focus:ring-retro-pink shadow-[2px_2px_0_0_#1a1a1a] cursor-pointer appearance-none">
+                            <option value="handout">Theory Handout</option>
+                            <option value="syllabus">Syllabus</option>
+                            <option value="assignment">Assignment / Problem Set</option>
+                        </select>
+                        <div
+                            class="pointer-events-none absolute right-12 mt(-8) flex items-center px-4 text-retro-border transform -translate-y-[45px]">
+                            <i class="ri-arrow-down-s-fill text-xl"></i>
+                        </div>
+
+                        <!-- Enhanced Mode Toggle -->
+                        <div
+                            class="mt-6 p-4 bg-retro-purple/5 border-2 border-dashed border-retro-purple/30 relative overflow-hidden group/enhanced">
+                            <label class="flex items-center cursor-pointer relative z-10">
+                                <div class="relative">
+                                    <input type="checkbox" id="enhanced-mode" class="peer sr-only" checked>
+                                    <div
+                                        class="w-12 h-6 bg-white border-2 border-retro-border shadow-brutal-sm transition-colors peer-checked:bg-retro-purple/20">
+                                    </div>
+                                    <div
+                                        class="absolute left-1 top-1 w-4 h-4 bg-white border border-retro-border shadow-brutal-sm transition-transform peer-checked:translate-x-6 peer-checked:bg-retro-purple">
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-xs font-bold uppercase tracking-widest text-retro-border">LEGENDARY
+                                        MODE</p>
+                                    <p class="text-[10px] font-bold text-retro-purple/70 uppercase">Enable YouTube Quest
+                                        Video Rewards</p>
+                                </div>
+                            </label>
+                            <!-- Decorative sparkles -->
+                            <i
+                                class="ri-sparkling-fill absolute top-1 right-1 text-retro-purple/20 text-xl group-hover/enhanced:text-retro-purple/40 transition-colors"></i>
+                        </div>
+
+                        <button type="submit" id="submit-btn"
+                            class="brutal-btn w-full bg-retro-yellow text-retro-border py-4 mt-6 text-xl tracking-widest">
+                            <i class="ri-hammer-fill mr-2"></i> FORGE QUEST MAP
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Status / Loading Area -->
+                <div id="status-area" class="hidden mt-8">
+
+                    <!-- Progress Bar -->
+                    <div id="progress-container" class="mb-6">
+                        <div class="flex justify-between font-bold text-sm uppercase mb-2">
+                            <span id="progress-status" class="pixel-font">UPLOADING_DATA...</span>
+                            <span id="progress-percentage" class="pixel-font text-retro-pink">0%</span>
+                        </div>
+                        <div class="xp-bar-container w-full">
+                            <div id="progress-fill" class="xp-bar-fill bg-retro-blue w-0"></div>
                         </div>
                     </div>
-                </div>
-            </form>
 
-            <!-- File Requirements -->
-            <div class="mt-6 border-t border-gray-200 pt-6">
-                <h3 class="text-sm font-medium text-gray-900">File Requirements:</h3>
-                <ul class="mt-4 space-y-3">
-                    <li class="flex items-start">
-                        <i class="ri-checkbox-circle-line ri-sm text-primary mt-1 mr-2"></i>
-                        <span class="text-sm text-gray-600">Only PDF files are accepted (.pdf)</span>
-                    </li>
-                    <li class="flex items-start">
-                        <i class="ri-checkbox-circle-line ri-sm text-primary mt-1 mr-2"></i>
-                        <span class="text-sm text-gray-600">Maximum file size: 50MB</span>
-                    </li>
-                    <li class="flex items-start">
-                        <i class="ri-checkbox-circle-line ri-sm text-primary mt-1 mr-2"></i>
-                        <span class="text-sm text-gray-600">Text must be selectable (no scanned documents)</span>
-                    </li>
-                </ul>
+                    <!-- AI Processing Container -->
+                    <div id="processing-container"
+                        class="hidden text-center bg-[#fdf6e3] border-4 border-retro-border p-8 shadow-brutal animate-pulse">
+                        <div
+                            class="w-16 h-16 mx-auto bg-white border-2 border-retro-border mb-4 flex items-center justify-center">
+                            <i class="ri-cpu-line text-4xl text-retro-border animate-spin"></i>
+                        </div>
+                        <h3 class="font-bold text-xl uppercase mb-2 tracking-wide font-['Space_Grotesk']">Synthesizing
+                            Lore</h3>
+                        <p class="pixel-font text-gray-600">The Sage Engine is reading the scrolls. This takes ~30
+                            seconds.</p>
+                        <div class="mt-4 text-left border-t-2 border-dashed border-gray-300 pt-4 max-w-xs mx-auto">
+                            <p class="pixel-font text-sm text-retro-blue">> Scanning pages...</p>
+                            <p class="pixel-font text-sm text-retro-pink">> Extracting quests...</p>
+                            <p class="pixel-font text-sm text-retro-yellow cursor-blink">> Generating loot tables...</p>
+                        </div>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="error-alert"
+                        class="hidden bg-red-100 border-4 border-[#ff5722] p-4 shadow-brutal flex items-start mt-6 text-[#ff5722]">
+                        <i class="ri-error-warning-fill text-2xl mr-3 flex-shrink-0 mt-0.5"></i>
+                        <div>
+                            <p class="font-bold font-['Space_Grotesk'] uppercase mb-1">SYNTAX_ERROR</p>
+                            <p id="error-message" class="text-sm font-medium"></p>
+                            <button type="button" id="retry-btn"
+                                class="mt-3 bg-white border border-[#ff5722] text-[#ff5722] px-3 py-1 text-xs font-bold hover:bg-[#ff5722] hover:text-white transition-colors uppercase">Try
+                                Again</button>
+                        </div>
+                    </div>
+
+                    <!-- Success Alert -->
+                    <div id="success-alert"
+                        class="hidden bg-[#f0fdf4] border-4 border-retro-green p-6 text-center shadow-brutal mt-6">
+                        <div
+                            class="w-16 h-16 mx-auto bg-retro-green border-2 border-retro-border text-retro-border flex items-center justify-center text-3xl mb-4 shadow-brutal-sm transform rotate-3">
+                            <i class="ri-check-line font-bold"></i>
+                        </div>
+                        <p class="font-bold text-xl uppercase mb-2">FORGE SUCCESSFUL</p>
+                        <p class="text-sm text-gray-600 mb-6 font-medium">Your quest map is ready for exploration.</p>
+
+                        <a href="{% url 'study_plans' %}" id="view-plan-btn"
+                            class="brutal-btn bg-retro-pink text-retro-border px-8 py-3 w-full">
+                            ENTER CAMPAIGN <i class="ri-arrow-right-circle-fill ml-2"></i>
+                        </a>
+                    </div>
+                </div>
+
             </div>
         </div>
+    </div>
 
-
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-500 text-sm">© 2025 StudyPlan AI. All rights reserved.</p>
-                <div class="mt-4 md:mt-0 flex space-x-6">
-                    <a href="#" class="text-gray-500 hover:text-gray-600 text-sm">Privacy Policy</a>
-                    <a href="#" class="text-gray-500 hover:text-gray-600 text-sm">Terms of Service</a>
-                    <a href="#" class="text-gray-500 hover:text-gray-600 text-sm">Help Center</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
+    <!-- Scripts -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const dropZone = document.querySelector('.drag-drop-zone');
-            const fileInput = document.querySelector('.file-input');
-            const uploadSection = document.getElementById('uploadSection');
-            const uploadProgress = document.getElementById('uploadProgress');
-            const uploadSuccess = document.getElementById('uploadSuccess');
-            const successFileName = document.getElementById('successFileName');
-            const uploadNewButton = document.getElementById('uploadNew');
-            const progressBar = document.querySelector('.progress-bar');
-            const progressText = uploadProgress ? uploadProgress.querySelector('.progress-bar').nextElementSibling : null;
-            const fileName = document.getElementById('fileName');
-            const cancelButton = document.getElementById('cancelUpload');
-            const form = document.getElementById('uploadForm');
-            let uploadController = null;
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            const fileInfo = document.getElementById('file-info');
+            const fileName = document.getElementById('file-name');
+            const fileSize = document.getElementById('file-size');
+            const removeFileBtn = document.getElementById('remove-file');
+            const uploadOptions = document.getElementById('upload-options');
+            const uploadForm = document.getElementById('upload-form');
+            const statusArea = document.getElementById('status-area');
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+            const progressPercentage = document.getElementById('progress-percentage');
+            const progressStatus = document.getElementById('progress-status');
+            const processingContainer = document.getElementById('processing-container');
+            const errorAlert = document.getElementById('error-alert');
+            const errorMessage = document.getElementById('error-message');
+            const successAlert = document.getElementById('success-alert');
+            const retryBtn = document.getElementById('retry-btn');
+            const viewPlanBtn = document.getElementById('view-plan-btn');
+            let selectedFile = null;
 
+            // Drag and Drop Events
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 dropZone.addEventListener(eventName, preventDefaults, false);
             });
-
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
 
             ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, highlight, false);
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
             });
 
             ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, unhighlight, false);
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
             });
 
-            function highlight() {
-                dropZone.classList.add('dragging');
-            }
-
-            function unhighlight() {
-                dropZone.classList.remove('dragging');
-            }
-
-            dropZone.addEventListener('drop', handleDrop, false);
-            fileInput.addEventListener('change', handleFileSelect, false);
-
-            function handleDrop(e) {
+            dropZone.addEventListener('drop', (e) => {
                 const dt = e.dataTransfer;
                 const files = dt.files;
                 handleFiles(files);
-            }
+            });
 
-            function handleFileSelect(e) {
-                const files = e.target.files;
-                handleFiles(files);
-            }
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', function () { handleFiles(this.files); });
 
+            // File Handling logic
             function handleFiles(files) {
-                if (files.length === 0) return;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.type !== 'application/pdf') {
+                        showError('Invalid Item Type: Hand over a PDF scroll.');
+                        return;
+                    }
+                    if (file.size > 50 * 1024 * 1024) {
+                        showError('Item too heavy: Core logic limit is 50MB.');
+                        return;
+                    }
+                    selectedFile = file;
+                    // Format size
+                    let size = file.size;
+                    let unit = 'Bytes';
+                    if (size >= 1048576) { size = (size / 1048576).toFixed(2); unit = 'MB'; }
+                    else if (size >= 1024) { size = (size / 1024).toFixed(2); unit = 'KB'; }
 
-                const file = files[0];
-                if (!validateFile(file)) return;
-
-                // Hide upload section, show progress
-                if (uploadSection) {
-                    uploadSection.classList.add('hidden');
-                }
-                if (uploadProgress) {
-                    uploadProgress.classList.remove('hidden');
-                }
-                if (uploadSuccess) {
-                    uploadSuccess.classList.add('hidden');
-                }
-
-                uploadFile(file);
-            }
-
-            function validateFile(file) {
-                const allowedTypes = ['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
-                const maxSize = 50 * 1024 * 1024; // 50MB
-
-                if (!allowedTypes.includes(file.type)) {
-                    showError('Please upload a PDF or PowerPoint file.');
-                    return false;
-                }
-
-                if (file.size > maxSize) {
-                    showError('File size exceeds 50MB limit.');
-                    return false;
-                }
-
-                return true;
-            }
-
-            function showError(message) {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded';
-                errorDiv.role = 'alert';
-                errorDiv.innerHTML = `
-                    <span class="block sm:inline">${message}</span>
-                    <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
-                        <i class="ri-close-line ri-sm cursor-pointer"></i>
-                    </span>
-                `;
-                document.body.appendChild(errorDiv);
-
-                const closeButton = errorDiv.querySelector('i');
-                closeButton.addEventListener('click', () => errorDiv.remove());
-
-                setTimeout(() => errorDiv.remove(), 5000);
-            }
-
-            function uploadFile(file) {
-                if (fileName) {
                     fileName.textContent = file.name;
+                    fileSize.textContent = `${size} ${unit}`;
+
+                    dropZone.classList.add('hidden');
+                    fileInfo.classList.remove('hidden');
+                    uploadOptions.classList.remove('hidden');
+                    errorAlert.classList.add('hidden');
                 }
+            }
 
-                const formData = new FormData(form);
-                formData.append('file', file);
+            removeFileBtn.addEventListener('click', () => {
+                selectedFile = null;
+                fileInput.value = '';
+                dropZone.classList.remove('hidden');
+                fileInfo.classList.add('hidden');
+                uploadOptions.classList.add('hidden');
+            });
 
-                uploadController = new AbortController();
+            retryBtn.addEventListener('click', () => {
+                errorAlert.classList.add('hidden');
+                statusArea.classList.add('hidden');
+                dropZone.classList.remove('hidden');
+                fileInfo.classList.add('hidden');
+                uploadOptions.classList.add('hidden');
+                selectedFile = null;
+                fileInput.value = '';
+            });
+
+            function showError(msg) {
+                dropZone.classList.add('hidden');
+                fileInfo.classList.add('hidden');
+                uploadOptions.classList.add('hidden');
+                statusArea.classList.remove('hidden');
+                progressContainer.classList.add('hidden');
+                processingContainer.classList.add('hidden');
+                successAlert.classList.add('hidden');
+                errorAlert.classList.remove('hidden');
+                errorMessage.textContent = msg;
+            }
+
+            // Pseudo Upload Logic
+            uploadForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (!selectedFile) return;
+
+                // UI adjustments
+                fileInfo.classList.add('hidden');
+                uploadOptions.classList.add('hidden');
+                statusArea.classList.remove('hidden');
+                progressContainer.classList.remove('hidden');
+                errorAlert.classList.add('hidden');
+
+                // Simulate upload progress
+                let progress = 0;
+                const uploadInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 100) progress = 100;
+
+                    progressFill.style.width = `${progress}%`;
+                    progressPercentage.textContent = `${Math.round(progress)}%`;
+
+                    if (progress === 100) {
+                        clearInterval(uploadInterval);
+                        setTimeout(startAIProcessing, 500);
+                    }
+                }, 200);
+            });
+
+            // Simulate AI Processing
+            function startAIProcessing() {
+                progressContainer.classList.add('hidden');
+                processingContainer.classList.remove('hidden');
+
+                // Submit real form via AJAX in background (simplified here)
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('document_type', document.querySelector('select[name="document_type"]').value);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
                 fetch('{% url "upload" %}', {
                     method: 'POST',
-                    body: formData,
-                    signal: uploadController.signal,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
+                    body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (progressBar) {
-                            progressBar.style.width = '100%';
-                        }
-                        if (progressText) {
-                            progressText.textContent = '100%';
-                        }
-                        setTimeout(() => {
-                            if (uploadProgress) {
-                                uploadProgress.classList.add('hidden');
-                            }
-                            if (uploadSuccess) {
-                                uploadSuccess.classList.remove('hidden');
-                                if (successFileName) {
-                                    successFileName.textContent = data.file_name;
-                                }
-                                // Set the PDF view link using the file_url from the response
-                                const viewPdfLink = document.getElementById('viewPdfLink');
-                                if (viewPdfLink && data.file_url) {
-                                    viewPdfLink.href = data.file_url;
-                                }
-                            }
-                        }, 500);
-                    } else {
-                        throw new Error(data.error);
-                    }
-                })
-                .catch(error => {
-                    if (uploadProgress) {
-                        uploadProgress.classList.add('hidden');
-                    }
-                    if (uploadSection) {
-                        uploadSection.classList.remove('hidden');
-                    }
-                    showError(error.message || 'Upload failed. Please try again.');
-                });
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) throw new Error(data.error);
 
-                if (cancelButton) {
-                    cancelButton.addEventListener('click', () => {
-                        uploadController.abort();
-                        if (uploadProgress) {
-                            uploadProgress.classList.add('hidden');
-                        }
-                        if (uploadSection) {
-                            uploadSection.classList.remove('hidden');
-                        }
-                    });
-                }
-            }
-
-            // Add analyze button functionality
-            const analyzeButton = document.getElementById('analyzeButton');
-            if (analyzeButton) {
-                analyzeButton.addEventListener('click', async () => {
-                    const viewPdfLink = document.getElementById('viewPdfLink');
-                    if (!viewPdfLink || !viewPdfLink.href) {
-                        showError('No PDF file available for analysis');
-                        return;
-                    }
-
-                    // Show loading state
-                    analyzeButton.disabled = true;
-                    analyzeButton.innerHTML = '<i class="ri-loader-4-line animate-spin mr-1"></i> Analyzing...';
-
-                    try {
-                        const response = await fetch('/analyze/', {
+                        // We need to trigger analysis endpoint now
+                        return fetch('{% url "analyze" %}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                                'X-CSRFToken': '{{ csrf_token }}'
                             },
                             body: JSON.stringify({
-                                file_url: viewPdfLink.href,
-                                prompt: 'summarize this'
+                                file_url: data.file_url,
+                                plan_mode: document.getElementById('enhanced-mode').checked ? 'enhanced' : 'basic'
                             })
                         });
-
-                        const data = await response.json();
-
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        processingContainer.classList.add('hidden');
                         if (data.success) {
-                            // Show analysis results
-                            const resultsDiv = document.createElement('div');
-                            resultsDiv.className = 'mt-6 bg-white rounded-lg shadow-sm p-6';
-
-                            try {
-                                const studyPlan = JSON.parse(data.result);
-
-                                // Create the enhanced study plan UI
-                                let studyPlanHTML =
-                                    '<div class="mb-8">' +
-                                        '<h2 class="text-3xl font-bold text-primary mb-2">' + studyPlan.course_name + '</h2>' +
-                                        '<p class="text-gray-600 mb-4">' + (studyPlan.course_description || 'Your personalized study plan') + '</p>' +
-
-                                        '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">' +
-                                            '<div class="bg-blue-50 p-4 rounded-lg">' +
-                                                '<div class="text-2xl font-bold text-blue-600">' + (studyPlan.total_duration_weeks || studyPlan.study_plan.length) + '</div>' +
-                                                '<div class="text-sm text-blue-800">Weeks</div>' +
-                                            '</div>' +
-                                            '<div class="bg-green-50 p-4 rounded-lg">' +
-                                                '<div class="text-2xl font-bold text-green-600">' + (studyPlan.recommended_schedule?.daily_study_time || '1-2 hours') + '</div>' +
-                                                '<div class="text-sm text-green-800">Daily Study Time</div>' +
-                                            '</div>' +
-                                            '<div class="bg-purple-50 p-4 rounded-lg">' +
-                                                '<div class="text-2xl font-bold text-purple-600">' + (studyPlan.learning_objectives?.length || 0) + '</div>' +
-                                                '<div class="text-sm text-purple-800">Learning Goals</div>' +
-                                            '</div>' +
-                                        '</div>' +
-                                    '</div>' +
-
-                                    '<div class="space-y-6">';
-
-                                // Add each week's content with enhanced details
-                                studyPlan.study_plan.forEach(week => {
-                                    const difficultyColor = {
-                                        'Beginner': 'bg-green-100 text-green-800',
-                                        'Intermediate': 'bg-yellow-100 text-yellow-800',
-                                        'Advanced': 'bg-red-100 text-red-800'
-                                    }[week.difficulty_level] || 'bg-gray-100 text-gray-800';
-
-                                    studyPlanHTML += `
-                                        <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200">
-                                            <div class="flex items-start justify-between mb-4">
-                                                <div class="flex items-center">
-                                                    <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                                                        <span class="text-primary font-bold">W${week.week}</span>
-                                                    </div>
-                                                    <div>
-                                                        <h3 class="text-xl font-semibold text-gray-900">${week.topic}</h3>
-                                                        <div class="flex items-center mt-1 space-x-3">
-                                                            <span class="px-2 py-1 text-xs font-medium rounded-full ${difficultyColor}">
-                                                                ${week.difficulty_level || 'Intermediate'}
-                                                            </span>
-                                                            <span class="text-sm text-gray-500">
-                                                                <i class="ri-time-line mr-1"></i>${week.estimated_hours || 8} hours
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Learning Objectives -->
-                                            ${week.learning_objectives ? `
-                                                <div class="mb-4">
-                                                    <h4 class="font-medium text-gray-900 mb-2">Learning Objectives:</h4>
-                                                    <ul class="list-disc list-inside space-y-1 text-gray-600 text-sm">
-                                                        ${week.learning_objectives.map(obj => `<li>${obj}</li>`).join('')}
-                                                    </ul>
-                                                </div>
-                                            ` : ''}
-
-                                            <!-- Study Activities -->
-                                            ${week.study_activities ? `
-                                                <div class="mb-4">
-                                                    <h4 class="font-medium text-gray-900 mb-2">Study Activities:</h4>
-                                                    <div class="space-y-2">
-                                                        ${week.study_activities.map(activity => `
-                                                            <div class="flex items-start p-3 bg-gray-50 rounded-lg">
-                                                                <div class="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                                                                <div class="flex-1">
-                                                                    <div class="font-medium text-sm text-gray-900">${activity.type}</div>
-                                                                    <div class="text-sm text-gray-600">${activity.description}</div>
-                                                                    <div class="text-xs text-gray-500 mt-1">${activity.estimated_time}</div>
-                                                                </div>
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
-                                                </div>
-                                            ` : ''}
-
-                                            <!-- Subtopics (fallback for old format) -->
-                                            ${week.subtopics ? `
-                                                <div class="mb-4">
-                                                    <h4 class="font-medium text-gray-900 mb-2">Topics Covered:</h4>
-                                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                        ${(Array.isArray(week.subtopics) ? week.subtopics : week.subtopic || []).map(subtopic => `
-                                                            <div class="flex items-center p-2 bg-blue-50 rounded text-sm">
-                                                                <i class="ri-checkbox-blank-circle-line text-blue-500 mr-2"></i>
-                                                                ${typeof subtopic === 'object' ? subtopic.name : subtopic}
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
-                                                </div>
-                                            ` : ''}
-
-                                            <!-- Key Concepts -->
-                                            ${week.key_concepts ? `
-                                                <div class="mb-4">
-                                                    <h4 class="font-medium text-gray-900 mb-2">Key Concepts:</h4>
-                                                    <div class="flex flex-wrap gap-2">
-                                                        ${week.key_concepts.map(concept => `
-                                                            <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full">${concept}</span>
-                                                        `).join('')}
-                                                    </div>
-                                                </div>
-                                            ` : ''}
-
-                                            <!-- Success Criteria -->
-                                            ${week.success_criteria ? `
-                                                <div class="mt-4 p-3 bg-green-50 rounded-lg">
-                                                    <h4 class="font-medium text-green-900 mb-2">Success Criteria:</h4>
-                                                    <ul class="list-disc list-inside space-y-1 text-green-700 text-sm">
-                                                        ${week.success_criteria.map(criteria => `<li>${criteria}</li>`).join('')}
-                                                    </ul>
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                    `;
-                                });
-
-                                // Add study tips and recommendations
-                                studyPlanHTML += `
-                                    </div>
-
-                                    ${studyPlan.study_tips ? `
-                                        <div class="mt-8 p-6 bg-yellow-50 rounded-lg">
-                                            <h3 class="text-lg font-semibold text-yellow-900 mb-3">
-                                                <i class="ri-lightbulb-line mr-2"></i>Study Tips
-                                            </h3>
-                                            <ul class="list-disc list-inside space-y-2 text-yellow-800">
-                                                ${studyPlan.study_tips.map(tip => `<li>${tip}</li>`).join('')}
-                                            </ul>
-                                        </div>
-                                    ` : ''}
-
-                                    <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-end">
-                                        <button onclick="exportStudyPlan()" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center">
-                                            <i class="ri-download-line mr-2"></i> Export as PDF
-                                        </button>
-                                        <button onclick="saveStudyPlan()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center">
-                                            <i class="ri-save-line mr-2"></i> Save Study Plan
-                                        </button>
-                                    </div>
-                                `;
-
-                                resultsDiv.innerHTML = studyPlanHTML;
-                            } catch (parseError) {
-                                resultsDiv.innerHTML = `
-                                    <div class="text-center py-8">
-                                        <i class="ri-error-warning-line ri-3x text-red-500 mb-4"></i>
-                                        <h3 class="text-lg font-medium text-gray-900">Error Processing Study Plan</h3>
-                                        <p class="text-gray-600 mt-2">The study plan could not be processed. Please try again.</p>
-                                    </div>
-                                `;
+                            successAlert.classList.remove('hidden');
+                            if (data.study_plan_id) {
+                                viewPlanBtn.href = `/study-plan/${data.study_plan_id}/`;
                             }
-
-                            // Remove any existing results
-                            const existingResults = document.querySelector('.study-plan-results');
-                            if (existingResults) {
-                                existingResults.remove();
-                            }
-
-                            // Add the new results
-                            resultsDiv.classList.add('study-plan-results');
-                            uploadSuccess.parentNode.insertBefore(resultsDiv, uploadSuccess.nextSibling);
                         } else {
-                            throw new Error(data.error);
+                            showError(data.error || 'AI synthesis failed due to bad mana allocation.');
                         }
-                    } catch (error) {
-                        showError(error.message || 'Analysis failed. Please try again.');
-                    } finally {
-                        // Reset button state
-                        analyzeButton.disabled = false;
-                        analyzeButton.innerHTML = '<i class="ri-ai-generate mr-1"></i> Analyze';
-                    }
-                });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        processingContainer.classList.add('hidden');
+                        showError(error.message || 'Critical failure in the Forge network.');
+                    });
             }
         });
-
-        // Export study plan as PDF
-        function exportStudyPlan() {
-            const studyPlanElement = document.querySelector('.study-plan-results');
-            if (!studyPlanElement) {
-                alert('No study plan to export');
-                return;
-            }
-
-            // Create a new window for printing
-            const printWindow = window.open('', '_blank');
-            const cleanHTML = studyPlanElement.innerHTML.replace(/onclick="[^"]*"/g, '').replace(/class="([^"]*)"/, 'class="$1 no-print"');
-            printWindow.document.write(
-                '<!DOCTYPE html>' +
-                '<html>' +
-                '<head>' +
-                    '<title>Study Plan Export</title>' +
-                    '<script src="https://cdn.tailwindcss.com/3.4.16"><\/script>' +
-                    '<style>' +
-                        '@media print {' +
-                            'body { print-color-adjust: exact; }' +
-                            '.no-print { display: none !important; }' +
-                        '}' +
-                        'body { font-family: "Inter", sans-serif; }' +
-                    '</style>' +
-                '</head>' +
-                '<body class="p-8">' +
-                    cleanHTML +
-                '</body>' +
-                '</html>'
-            );
-            printWindow.document.close();
-            printWindow.print();
-        }
-
-        // Save study plan (placeholder for future database integration)
-        function saveStudyPlan() {
-            // For now, just download as JSON
-            const studyPlanResults = document.querySelector('.study-plan-results');
-            if (!studyPlanResults) {
-                alert('No study plan to save');
-                return;
-            }
-
-            // Extract the study plan data from the current display
-            const studyPlanTitle = studyPlanResults.querySelector('h2').textContent;
-            const studyPlanData = {
-                course_name: studyPlanTitle,
-                saved_date: new Date().toISOString(),
-                html_content: studyPlanResults.innerHTML
-            };
-
-            // Create download link
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(studyPlanData, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", studyPlanTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '_study_plan.json');
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-
-            // Show success message
-            showSuccess('Study plan saved successfully!');
-        }
-
-        // Show success message
-        function showSuccess(message) {
-            const successDiv = document.createElement('div');
-            successDiv.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded';
-            successDiv.role = 'alert';
-            successDiv.innerHTML =
-                '<span class="block sm:inline">' + message + '</span>' +
-                '<span class="absolute top-0 bottom-0 right-0 px-4 py-3">' +
-                    '<i class="ri-close-line ri-sm cursor-pointer"></i>' +
-                '</span>';
-            document.body.appendChild(successDiv);
-
-            const closeButton = successDiv.querySelector('i');
-            closeButton.addEventListener('click', () => successDiv.remove());
-
-            setTimeout(() => successDiv.remove(), 5000);
-        }
     </script>
 </body>
+
 </html>

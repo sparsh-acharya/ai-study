@@ -1,553 +1,596 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ study_plan.course_name }} - StudyPlan AI</title>
+    <title>{{ study_plan.course_name }} — StudyQuest</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#10B981'}}}}</script>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        retro: { bg: '#fdf6e3', border: '#1a1a1a', pink: '#ff90e8', cyan: '#00f0ff', green: '#22c55e', yellow: '#ffc900', purple: '#b19cd9', blue: '#90b4fe' }
+                    },
+                    boxShadow: { 'brutal': '4px 4px 0px 0px rgba(26,26,26,1)', 'brutal-lg': '8px 8px 0px 0px rgba(26,26,26,1)', 'brutal-sm': '2px 2px 0px 0px rgba(26,26,26,1)' }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .progress-ring {
-            transform: rotate(-90deg);
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #fdf6e3;
+            color: #1a1a1a;
+            cursor: crosshair;
         }
-        .progress-ring-circle {
-            transition: stroke-dashoffset 0.35s;
-            transform-origin: 50% 50%;
+
+        .pixel-font {
+            font-family: 'VT323', monospace;
         }
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+
+        .brutal-card {
+            background: white;
+            border: 3px solid #1a1a1a;
+            box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .brutal-btn {
+            background: #1a1a1a;
+            color: white;
+            border: 3px solid #1a1a1a;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
+            transition: all 0.1s ease;
+            cursor: pointer;
+        }
+
+        .brutal-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .brutal-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(#1a1a1a 1px, transparent 1px), linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: -1px -1px;
+            background-color: #fdf6e3;
+            opacity: 0.05;
+        }
+
+        .win-frame {
+            border: 3px solid #1a1a1a;
+            background: white;
+        }
+
+        .win-title {
+            background: #1a1a1a;
+            color: white;
+            padding: 4px 12px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #1a1a1a;
+        }
+
+        .xp-bar-container {
+            background: white;
+            border: 2px solid #1a1a1a;
+            height: 16px;
+            position: relative;
             overflow: hidden;
+        }
+
+        .xp-bar-fill {
+            height: 100%;
+            border-right: 2px solid #1a1a1a;
+            transition: width 0.5s ease;
+            background: #90b4fe;
+        }
+
+        /* Checkbox styling */
+        .brutal-checkbox {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border: 2px solid #1a1a1a;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.1s;
+        }
+
+        .brutal-checkbox:checked {
+            background: #22c55e;
+        }
+
+        .brutal-checkbox:checked::after {
+            content: 'X';
+            position: absolute;
+            top: -2px;
+            left: 6px;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+
+        .brutal-checkbox:active {
+            transform: scale(0.9);
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-slide-in {
+            animation: slideInUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
+
+<body class="relative min-h-screen">
+    <!-- Grid -->
+    <div class="fixed inset-0 grid-bg pointer-events-none -z-10"></div>
+
+    <!-- Nav -->
+    <nav class="fixed top-0 w-full bg-[#fdf6e3] border-b-4 border-retro-border z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="{% url 'landing' %}" class="flex items-center">
-                        <span class="text-2xl font-['Pacifico'] text-primary">StudyPlan</span>
-                    </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{% url 'study_plans' %}" class="text-gray-600 hover:text-primary transition-colors">
-                        <i class="ri-arrow-left-line mr-1"></i>Back to Study Plans
-                    </a>
-                    <a href="{% url 'user_dashboard' %}" class="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all">
-                        <i class="ri-trophy-line"></i>
-                        <span class="font-semibold">Level {{ user_stats.level }}</span>
-                        {% if user_stats.new_achievements_count > 0 %}
-                            <span class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ user_stats.new_achievements_count }}</span>
-                        {% endif %}
-                    </a>
-                    {% if user.is_authenticated %}
-                        <span class="text-gray-600">{{ user.first_name|default:user.username }}</span>
-                        <a href="{% url 'logout' %}" class="text-gray-600 hover:text-primary transition-colors">Logout</a>
-                    {% endif %}
+            <div class="flex justify-between h-16 items-center">
+                <a href="{% url 'landing' %}" class="flex items-center space-x-2">
+                    <div
+                        class="w-8 h-8 bg-retro-yellow border-2 border-retro-border flex items-center justify-center shadow-brutal-sm">
+                        <i class="ri-gamepad-line font-bold"></i>
+                    </div>
+                    <span class="text-3xl font-bold tracking-tight pixel-font mt-1">STUDYQUEST</span>
+                </a>
+                <div class="hidden lg:flex items-center space-x-6">
+                    <a href="{% url 'study_plans' %}"
+                        class="font-bold hover:underline decoration-4 underline-offset-4 decoration-retro-pink">Back to
+                        Log</a>
+                    <a href="{% url 'user_dashboard' %}"
+                        class="font-bold hover:underline decoration-4 underline-offset-4 decoration-retro-yellow">Dashboard</a>
+                    <div
+                        class="w-8 h-8 bg-retro-green border-2 border-retro-border flex items-center justify-center font-bold shadow-brutal-sm">
+                        {{ user.first_name.0|default:user.username.0|upper }}
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <!-- Header -->
-        <div class="bg-white rounded-lg shadow-sm p-8 mb-8">
-            <div class="flex items-start justify-between mb-6">
-                <div class="flex-1">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <h1 class="text-3xl font-bold text-gray-900">{{ study_plan.course_name }}</h1>
-                        {% if study_plan.plan_mode == 'enhanced' %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-blue-100 text-green-700 border border-green-200">
-                                <i class="ri-youtube-line mr-1"></i>
-                                Enhanced with Resources
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-32">
+
+        <!-- Headers -->
+        <div class="mb-4">
+            <a href="{% url 'study_plans' %}"
+                class="inline-flex items-center text-sm font-bold bg-white border-2 border-retro-border px-3 py-1 shadow-brutal-sm hover:bg-retro-yellow transition-colors -rotate-1 mb-6">
+                <i class="ri-arrow-left-box-line mr-2"></i> LEVEL SELECT
+            </a>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-2 uppercase">{{ study_plan.course_name }}</h1>
+            <p class="text-xl max-w-2xl font-medium border-l-4 border-retro-border pl-4 bg-white/50 py-2">
+                {{ study_plan.course_description|default:"Strategic game plan generated dynamically." }}
+            </p>
+        </div>
+
+        <!-- Progress Overview Window -->
+        <div class="win-frame shadow-brutal-lg mb-10 bg-white">
+            <div class="win-title bg-retro-purple text-retro-border">
+                <span>QUEST_STATS.bat</span>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Info Grid -->
+                <div class="md:col-span-1 space-y-4 pr-6 md:border-r-2 md:border-dashed border-gray-300">
+                    <div>
+                        <div class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Time Committment
+                        </div>
+                        <div class="font-bold bg-[#f4f4f4] border border-retro-border px-2 py-1 inline-block">
+                            <i class="ri-timer-line text-retro-pink"></i>
+                            {{ study_plan.recommended_daily_study_time|title }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Source Material
+                        </div>
+                        <div class="font-bold bg-[#f4f4f4] border border-retro-border px-2 py-1 inline-block"><i
+                                class="ri-file-pdf-line text-retro-blue"></i> {{ study_plan.document.file_name }}</div>
+                    </div>
+                </div>
+
+                <!-- Progress Bars Grid -->
+                <div class="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-[#fdf6e3] border-2 border-retro-border p-3 shadow-brutal-sm">
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="font-bold uppercase text-sm">Campaign Progress</span>
+                            <span class="pixel-font font-bold text-lg">
+                                {{ progress_stats.weeks_progress|floatformat:0 }}%
                             </span>
-                        {% endif %}
-                    </div>
-                    <p class="text-gray-600 mb-4">{{ study_plan.course_description }}</p>
-                    <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                        <div class="flex items-center">
-                            <i class="ri-time-line mr-2"></i>
-                            {{ study_plan.recommended_daily_study_time }} daily
                         </div>
-                        <div class="flex items-center">
-                            <i class="ri-calendar-line mr-2"></i>
-                            {{ study_plan.total_duration_weeks }} weeks total
-                        </div>
-                        <div class="flex items-center">
-                            <i class="ri-file-pdf-line mr-2"></i>
-                            {{ study_plan.document.file_name }}
-                        </div>
-                        {% if study_plan.syllabus_document %}
-                            <div class="flex items-center">
-                                <i class="ri-file-list-line mr-2"></i>
-                                Syllabus included
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gamification Stats Bar -->
-            <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-6">
-                        <div class="flex items-center space-x-2">
-                            <i class="ri-fire-fill text-2xl text-orange-500"></i>
-                            <div>
-                                <div class="text-lg font-bold text-gray-900">{{ user_stats.current_streak }}</div>
-                                <div class="text-xs text-gray-600">Day Streak</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <i class="ri-star-fill text-2xl text-yellow-500"></i>
-                            <div>
-                                <div class="text-lg font-bold text-gray-900">{{ user_stats.total_xp }}</div>
-                                <div class="text-xs text-gray-600">Total XP</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <i class="ri-trophy-fill text-2xl text-purple-500"></i>
-                            <div>
-                                <div class="text-lg font-bold text-gray-900">Level {{ user_stats.level }}</div>
-                                <div class="text-xs text-gray-600">Current Level</div>
+                        <div class="xp-bar-container">
+                            <div class="xp-bar-fill bg-retro-pink" style="width: {{ progress_stats.weeks_progress }}%;">
                             </div>
                         </div>
                     </div>
-                    <div class="flex-1 max-w-xs ml-6">
-                        <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
-                            <span>Level {{ user_stats.level }}</span>
-                            <span>Level {{ user_stats.level|add:1 }}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
-                                 style="width: {{ user_stats.xp_progress_percentage }}%"></div>
-                        </div>
-                        <div class="text-xs text-gray-500 mt-1 text-center">{{ user_stats.xp_progress_percentage|floatformat:0 }}% to next level</div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Progress Statistics -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-blue-50 p-4 rounded-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-2xl font-bold text-blue-600">{{ progress_stats.completed_weeks }}/{{ progress_stats.total_weeks }}</div>
-                            <div class="text-sm text-blue-800">Weeks Completed</div>
+                    <div class="bg-[#fdf6e3] border-2 border-retro-border p-3 shadow-brutal-sm">
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="font-bold uppercase text-sm">Activities Conquered</span>
+                            <span class="pixel-font font-bold text-lg">
+                                {{ progress_stats.activities_progress|floatformat:0 }}%
+                            </span>
                         </div>
-                        <div class="w-12 h-12">
-                            <svg class="progress-ring w-12 h-12" viewBox="0 0 42 42">
-                                <circle class="progress-ring-circle stroke-blue-200" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"/>
-                                <circle class="progress-ring-circle stroke-blue-600" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"
-                                        stroke-dasharray="{% widthratio progress_stats.weeks_progress 100 119 %} 119"
-                                        stroke-dashoffset="0"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-green-50 p-4 rounded-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-2xl font-bold text-green-600">{{ progress_stats.completed_activities }}/{{ progress_stats.total_activities }}</div>
-                            <div class="text-sm text-green-800">Activities Done</div>
-                        </div>
-                        <div class="w-12 h-12">
-                            <svg class="progress-ring w-12 h-12" viewBox="0 0 42 42">
-                                <circle class="progress-ring-circle stroke-green-200" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"/>
-                                <circle class="progress-ring-circle stroke-green-600" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"
-                                        stroke-dasharray="{% widthratio progress_stats.activities_progress 100 119 %} 119"
-                                        stroke-dashoffset="0"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-red-50 p-4 rounded-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-2xl font-bold text-red-600">{{ progress_stats.watched_videos }}/{{ progress_stats.total_videos }}</div>
-                            <div class="text-sm text-red-800">Videos Watched</div>
-                        </div>
-                        <div class="w-12 h-12">
-                            <svg class="progress-ring w-12 h-12" viewBox="0 0 42 42">
-                                <circle class="progress-ring-circle stroke-red-200" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"/>
-                                <circle class="progress-ring-circle stroke-red-600" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"
-                                        stroke-dasharray="{% widthratio progress_stats.videos_progress 100 119 %} 119"
-                                        stroke-dashoffset="0"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-purple-50 p-4 rounded-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-2xl font-bold text-purple-600">{{ progress_stats.weeks_progress|floatformat:0 }}%</div>
-                            <div class="text-sm text-purple-800">Overall Progress</div>
-                        </div>
-                        <div class="w-12 h-12">
-                            <svg class="progress-ring w-12 h-12" viewBox="0 0 42 42">
-                                <circle class="progress-ring-circle stroke-purple-200" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"/>
-                                <circle class="progress-ring-circle stroke-purple-600" stroke-width="3" fill="transparent" r="19" cx="21" cy="21"
-                                        stroke-dasharray="{% widthratio progress_stats.weeks_progress 100 119 %} 119"
-                                        stroke-dashoffset="0"/>
-                            </svg>
+                        <div class="xp-bar-container">
+                            <div class="xp-bar-fill bg-retro-yellow"
+                                style="width: {{ progress_stats.activities_progress }}%;"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Study Plan Weeks -->
-        <div class="space-y-6">
+        <!-- Weeks/Chapters -->
+        <h2
+            class="text-3xl font-bold font-['Space_Grotesk'] tracking-tight mb-6 mt-12 bg-white inline-block px-4 py-2 border-4 border-retro-border shadow-brutal transform rotate-1">
+            <i class="ri-route-line text-retro-blue"></i> CHAPTER SELECT
+        </h2>
+
+        <div class="space-y-8">
             {% for week in weeks %}
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div class="p-6">
-                        <!-- Week Header -->
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                                    <span class="text-primary font-semibold">{{ week.week_number }}</span>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-gray-900">{{ week.topic }}</h3>
-                                    <p class="text-sm text-gray-600">{{ week.estimated_hours }}</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-3">
-                                {% if week.completed_at %}
-                                    <span class="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                                        Completed {{ week.completed_at|date:"M d" }}
-                                    </span>
-                                {% endif %}
+            <div class="win-frame shadow-brutal-lg relative overflow-hidden transition-all duration-300 {% if week.is_completed %}border-retro-green border-4 opacity-90{% else %}bg-white{% endif %}"
+                id="week-card-{{ week.id }}">
+                <!-- Completed Overlay Label -->
+                {% if week.is_completed %}
+                <div
+                    class="absolute -right-12 top-6 bg-retro-green text-retro-border pixel-font text-xl px-12 py-1 transform rotate-45 border-y-2 border-retro-border z-20 shadow-brutal-sm font-bold">
+                    CLEARED</div>
+                {% endif %}
 
-                                <!-- Quiz Button -->
-                                {% if week.quiz %}
-                                    <a href="{% url 'quiz_detail' week.quiz.id %}"
-                                       class="flex items-center px-3 py-2 rounded-md text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors">
-                                        <i class="ri-file-list-3-line mr-1"></i>
-                                        Take Quiz
-                                    </a>
-                                {% else %}
-                                    <button onclick="generateQuiz({{ week.id }})"
-                                            id="quiz-btn-{{ week.id }}"
-                                            class="flex items-center px-3 py-2 rounded-md text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors">
-                                        <i class="ri-add-line mr-1"></i>
-                                        Generate Quiz
-                                    </button>
-                                {% endif %}
+                <!-- Window Header -->
+                <div class="win-title {% if week.is_completed %}bg-retro-green{% else %}bg-[#f4f4f4] text-retro-border{% endif %} px-4 py-3 flex items-center justify-between cursor-pointer border-b-3 border-retro-border"
+                    onclick="toggleWeek({{ week.id }})">
+                    <div class="flex items-center gap-3">
+                        <button onclick="event.stopPropagation(); toggleWeekCompletion({{ week.id }})"
+                            class="w-6 h-6 border-2 border-retro-border bg-white flex items-center justify-center transition-transform hover:scale-110 active:scale-95 week-completion-btn"
+                            data-week-id="{{ week.id }}">
+                            <i
+                                class="{% if week.is_completed %}ri-check-line text-retro-green font-bold text-xl{% endif %}"></i>
+                        </button>
+                        <span
+                            class="pixel-font font-bold text-xl tracking-wide {% if week.is_completed %}text-retro-border{% else %}text-retro-border{% endif %}">
+                            PHASE {{ week.week_number }}: {{ week.topic }}
+                        </span>
+                    </div>
+                    <i class="ri-arrow-down-s-line text-2xl transition-transform duration-300"
+                        id="week-icon-{{ week.id }}"></i>
+                </div>
 
-                                <button onclick="toggleWeekCompletion({{ week.id }})"
-                                        class="week-toggle-{{ week.id }} flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors
-                                               {% if week.is_completed %}bg-green-100 text-green-700 hover:bg-green-200{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-                                    <i class="{% if week.is_completed %}ri-check-line{% else %}ri-circle-line{% endif %} mr-1"></i>
-                                    {% if week.is_completed %}Completed{% else %}Mark Complete{% endif %}
-                                </button>
-                            </div>
-                        </div>
+                <!-- Window Body (Collapsible) -->
+                <div id="week-content-{{ week.id }}" class="hidden">
+                    <div class="p-6 bg-white border-t-2 border-dashed border-gray-300">
 
                         <!-- Activities -->
-                        <div class="space-y-3">
-                            {% for activity in week.activities.all %}
-                                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                                    <button onclick="toggleActivityCompletion({{ activity.id }})" 
-                                            class="activity-toggle-{{ activity.id }} mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors
-                                                   {% if activity.is_completed %}bg-green-500 border-green-500 text-white{% else %}border-gray-300 hover:border-green-400{% endif %}">
-                                        {% if activity.is_completed %}
-                                            <i class="ri-check-line text-xs"></i>
+                        <div class="mb-6">
+                            <h4
+                                class="font-bold text-sm uppercase tracking-wider mb-4 px-2 border-l-4 border-retro-pink">
+                                Required Sidequests</h4>
+                            <div class="space-y-3">
+                                {% for activity in week.activities.all %}
+                                <div class="flex items-start bg-[#fdf6e3] border-2 border-retro-border p-3 shadow-brutal-sm hover:-translate-y-1 transition-transform cursor-pointer"
+                                    onclick="toggleCheckbox('activity-{{ activity.id }}')">
+                                    <input type="checkbox" id="activity-{{ activity.id }}"
+                                        class="brutal-checkbox mt-0.5 shrink-0" {% if activity.is_completed %} checked
                                         {% endif %}
-                                    </button>
-                                    <div class="flex-1">
-                                        <div class="flex items-center space-x-2 mb-1">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
-                                                {{ activity.get_activity_type_display }}
-                                            </span>
-                                            {% if activity.estimated_time %}
-                                                <span class="text-xs text-gray-500">{{ activity.estimated_time }}</span>
-                                            {% endif %}
-                                        </div>
-                                        <p class="text-sm text-gray-700 {% if activity.is_completed %}line-through text-gray-500{% endif %}">
+                                        onclick="event.stopPropagation(); updateActivity({{ activity.id }}, this.checked)">
+                                    <div class="ml-4 flex-1">
+                                        <p class="font-semibold text-[15px] {% if activity.is_completed %}line-through text-gray-400{% endif %}"
+                                            id="activity-desc-{{ activity.id }}">
                                             {{ activity.description }}
                                         </p>
-                                        {% if activity.completed_at %}
-                                            <p class="text-xs text-green-600 mt-1">
-                                                Completed {{ activity.completed_at|date:"M d, Y g:i A" }}
-                                            </p>
-                                        {% endif %}
+                                        <div class="mt-2 flex gap-2">
+                                            <span
+                                                class="text-[10px] uppercase font-bold tracking-widest bg-white border border-retro-border px-1">
+                                                {{ activity.get_activity_type_display }}
+                                            </span>
+                                            <span class="text-[10px] uppercase font-bold tracking-widest text-[#888]">
+                                                {{ activity.estimated_time }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                            {% endfor %}
+                                {% endfor %}
+                            </div>
                         </div>
 
-                        <!-- Learning Resources (YouTube Videos, etc.) -->
-                        {% if week.resources.all %}
-                            <div class="mt-6 pt-6 border-t border-gray-200">
-                                <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
-                                    <i class="ri-youtube-line text-red-500 mr-2"></i>
-                                    Recommended Learning Resources
-                                </h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {% for resource in week.resources.all %}
-                                        <div class="group block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 {% if resource.is_watched %}border-green-300 bg-green-50{% else %}hover:border-primary{% endif %}">
-                                            <div class="flex">
-                                                {% if resource.thumbnail_url %}
-                                                    <div class="w-32 h-24 flex-shrink-0 bg-gray-100 relative overflow-hidden">
-                                                        <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer">
-                                                            <img src="{{ resource.thumbnail_url }}" alt="{{ resource.title }}"
-                                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 {% if resource.is_watched %}opacity-75{% endif %}">
-                                                            {% if resource.duration %}
-                                                                <span class="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
-                                                                    {{ resource.duration }}
-                                                                </span>
-                                                            {% endif %}
-                                                            {% if resource.is_watched %}
-                                                                <div class="absolute inset-0 flex items-center justify-center bg-black/30">
-                                                                    <i class="ri-check-line text-white text-3xl"></i>
-                                                                </div>
-                                                            {% endif %}
-                                                        </a>
-                                                    </div>
-                                                {% endif %}
-                                                <div class="flex-1 p-3 flex flex-col">
-                                                    <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer">
-                                                        <h5 class="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-primary transition-colors {% if resource.is_watched %}line-through text-gray-600{% endif %}">
-                                                            {{ resource.title }}
-                                                        </h5>
-                                                    </a>
-                                                    {% if resource.channel_name %}
-                                                        <p class="text-xs text-gray-500 mt-1">{{ resource.channel_name }}</p>
-                                                    {% endif %}
-                                                    {% if resource.description %}
-                                                        <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ resource.description }}</p>
-                                                    {% endif %}
-                                                    <div class="flex items-center justify-between mt-auto pt-2">
-                                                        <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer" class="flex items-center text-xs text-gray-500 hover:text-primary">
-                                                            <i class="ri-external-link-line mr-1"></i>
-                                                            <span>Watch on YouTube</span>
-                                                        </a>
-                                                        <button onclick="toggleVideoWatched(event, {{ resource.id }})"
-                                                                class="video-toggle-{{ resource.id }} flex items-center px-2 py-1 rounded text-xs font-medium transition-colors
-                                                                       {% if resource.is_watched %}bg-green-100 text-green-700 hover:bg-green-200{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-                                                            <i class="{% if resource.is_watched %}ri-check-line{% else %}ri-eye-line{% endif %} mr-1"></i>
-                                                            {% if resource.is_watched %}Watched{% else %}Mark Watched{% endif %}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
+                        <!-- Resources (Enhanced Mode) -->
+                        {% if study_plan.plan_mode == 'enhanced' and week.resources.all %}
+                        <div class="mb-6">
+                            <h4
+                                class="font-bold text-sm uppercase tracking-wider mb-4 px-2 border-l-4 border-retro-blue">
+                                Bonus Lore (Videos)</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for resource in week.resources.all %}
+                                {% if resource.resource_type == 'youtube' %}
+                                <div class="brutal-card p-0 flex flex-col group relative {% if resource.is_watched %}opacity-50 grayscale{% endif %}"
+                                    id="resource-card-{{ resource.id }}">
+                                    <a href="{{ resource.url }}" target="_blank"
+                                        class="block relative border-b-2 border-retro-border overflow-hidden">
+                                        <img src="{{ resource.thumbnail_url }}" alt="Thumbnail"
+                                            class="w-full h-32 object-cover transition-transform group-hover:scale-105">
+                                        <div
+                                            class="absolute inset-0 bg-retro-blue/20 group-hover:bg-transparent transition-colors">
                                         </div>
-                                    {% endfor %}
+                                        <div
+                                            class="absolute bottom-2 right-2 bg-retro-border text-white text-xs font-bold px-1 pixel-font">
+                                            {{ resource.duration }}
+                                        </div>
+                                    </a>
+                                    <div class="p-3 bg-white flex-1 flex flex-col justify-between">
+                                        <h5 class="font-bold text-sm mb-1 line-clamp-2 leading-tight">
+                                            {{ resource.title }}
+                                        </h5>
+                                        <div
+                                            class="flex items-center justify-between mt-2 pt-2 border-t border-dashed border-gray-300">
+                                            <label class="flex items-center gap-2 cursor-pointer">
+                                                <input type="checkbox" class="brutal-checkbox scale-75 cursor-pointer"
+                                                    {% if resource.is_watched %}checked{% endif %}
+                                                    onchange="updateVideoStatus({{ resource.id }}, this.checked)">
+                                                <span
+                                                    class="text-xs font-bold uppercase tracking-wider text-gray-500">Watched</span>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
+                                {% endif %}
+                                {% endfor %}
                             </div>
+                        </div>
                         {% endif %}
+
+                        <!-- Boss Battle (Quiz) -->
+                        <div class="bg-[#f0f9ff] border-3 border-retro-blue p-5 shadow-brutal mt-6">
+                            <h4 class="font-bold text-sm uppercase tracking-wider mb-2 flex items-center">
+                                <i class="ri-sword-fill text-retro-blue mr-2"></i> Boss Encounter (Quiz)
+                            </h4>
+                            <p class="text-sm font-medium text-gray-600 mb-4">
+                                Validate your knowledge from Phase {{ week.week_number }} to earn extra XP.
+                            </p>
+
+                            {% if week.quiz %}
+                            <div class="flex gap-3">
+                                <a href="{% url 'quiz_detail' week.quiz.id %}"
+                                    class="brutal-btn bg-white text-retro-border px-4 py-2 text-sm w-full text-center">
+                                    ENTER ARENA
+                                </a>
+                                {% if week.quiz.attempts.all %}
+                                <div
+                                    class="bg-white border-2 border-retro-border flex items-center justify-center px-4 font-bold pixel-font shadow-brutal-sm">
+                                    HIGHSCORE: {{ week.quiz.attempts.first.score }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <button
+                                class="brutal-btn w-full bg-retro-pink text-retro-border py-2 text-sm hover:underline"
+                                onclick="generateQuiz({{ week.id }})" id="generate-btn-{{ week.id }}">
+                                GENERATE BOSS FILE <i class="ri-cpu-line ml-1"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+
                     </div>
                 </div>
+            </div>
             {% endfor %}
         </div>
     </div>
 
-    {% csrf_token %}
 
-    <!-- XP Notification Toast -->
-    <div id="xp-toast" class="fixed top-20 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-4 rounded-lg shadow-2xl transform translate-x-full transition-transform duration-300 z-50">
-        <div class="flex items-center space-x-3">
-            <i class="ri-star-fill text-2xl"></i>
-            <div>
-                <div class="font-bold text-lg" id="xp-amount">+10 XP</div>
-                <div class="text-sm opacity-90" id="xp-reason">Activity completed!</div>
-            </div>
-        </div>
+    <!-- Floating HUD Toasts Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col items-end space-y-2 pointer-events-none">
     </div>
 
-    <!-- Level Up Notification -->
-    <div id="levelup-toast" class="fixed top-20 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-4 rounded-lg shadow-2xl transform translate-x-full transition-transform duration-300 z-50">
-        <div class="flex items-center space-x-3">
-            <i class="ri-trophy-fill text-3xl animate-bounce"></i>
-            <div>
-                <div class="font-bold text-xl">LEVEL UP!</div>
-                <div class="text-sm opacity-90" id="level-text">You reached Level 2!</div>
-            </div>
-        </div>
-    </div>
-
+    <!-- Gamification Script -->
     <script>
-        function showXPNotification(xpAmount, reason, leveledUp = false, newLevel = 0) {
-            const toast = document.getElementById('xp-toast');
-            document.getElementById('xp-amount').textContent = '+' + xpAmount + ' XP';
-            document.getElementById('xp-reason').textContent = reason;
+        const csrfToken = '{{ csrf_token }}';
 
-            toast.classList.remove('translate-x-full');
+        // Fake checkbox click helper
+        function toggleCheckbox(id) {
+            const cb = document.getElementById(id);
+            cb.checked = !cb.checked;
+            cb.onclick(); // trigger logic
+        }
 
+        // Toggle week accordion
+        window.toggleWeek = function (weekId) {
+            const content = document.getElementById(`week-content-${weekId}`);
+            const icon = document.getElementById(`week-icon-${weekId}`);
+
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        };
+
+        // Custom Toast System (8-bit style)
+        function showHUDToast(title, xp, isLevelUp = false, level = null) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            toast.className = `win-frame p-4 shadow-brutal-lg flex items-center gap-4 toast-slide-in pointer-events-auto ${isLevelUp ? 'bg-retro-yellow transform -rotate-2' : 'bg-white'}`;
+
+            if (isLevelUp) {
+                toast.innerHTML = `
+                    <div class="w-12 h-12 bg-white border-2 border-retro-border flex items-center justify-center text-3xl animate-bounce">⭐</div>
+                    <div>
+                        <div class="pixel-font text-2xl font-bold uppercase tracking-widest text-retro-border">LEVEL UP!</div>
+                        <div class="font-bold text-sm">You are now Level ${level}</div>
+                    </div>
+                `;
+            } else {
+                toast.innerHTML = `
+                    <div class="w-10 h-10 bg-[#f4f4f4] border-2 border-retro-border flex items-center justify-center text-xl">⚔️</div>
+                    <div>
+                        <div class="text-sm font-bold uppercase tracking-widest text-gray-500">${title}</div>
+                        <div class="pixel-font font-bold text-retro-pink text-xl">+${xp} XP GAINED</div>
+                    </div>
+                `;
+            }
+
+            container.appendChild(toast);
+
+            // Remove after 4s
             setTimeout(() => {
-                toast.classList.add('translate-x-full');
-
-                if (leveledUp) {
-                    setTimeout(() => showLevelUpNotification(newLevel), 300);
-                }
-            }, 3000);
+                toast.style.animation = 'slideInUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) reverse forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
         }
 
-        function showLevelUpNotification(level) {
-            const toast = document.getElementById('levelup-toast');
-            document.getElementById('level-text').textContent = 'You reached Level ' + level + '!';
-
-            toast.classList.remove('translate-x-full');
-
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-                setTimeout(() => location.reload(), 500);
-            }, 3000);
-        }
-
-        async function toggleWeekCompletion(weekId) {
-            try {
-                const response = await fetch('/toggle-week/' + weekId + '/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    if (data.gamification) {
-                        showXPNotification(
-                            data.gamification.xp_awarded,
-                            data.gamification.reason,
-                            data.gamification.leveled_up,
-                            data.gamification.level
-                        );
-                        if (!data.gamification.leveled_up) {
-                            setTimeout(() => location.reload(), 3500);
-                        }
-                    } else {
-                        location.reload();
-                    }
+        function checkGamification(data) {
+            if (data.gamification) {
+                if (data.gamification.xp_awarded > 0) {
+                    showHUDToast(data.gamification.reason, data.gamification.xp_awarded);
                 }
-            } catch (error) {
-                console.error('Error toggling week completion:', error);
+                if (data.gamification.leveled_up) {
+                    setTimeout(() => {
+                        showHUDToast('Level Up!', 0, true, data.gamification.level);
+                    }, 1000);
+                }
             }
         }
 
-        async function toggleActivityCompletion(activityId) {
+        // Toggle entire week completion
+        window.toggleWeekCompletion = async function (weekId) {
             try {
-                const response = await fetch('/toggle-activity/' + activityId + '/', {
+                const response = await fetch(`/toggle-week/${weekId}/`, {
                     method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'X-CSRFToken': csrfToken }
                 });
 
-                const data = await response.json();
-                if (data.success) {
-                    if (data.gamification) {
-                        showXPNotification(
-                            data.gamification.xp_awarded,
-                            data.gamification.reason,
-                            data.gamification.leveled_up,
-                            data.gamification.level
-                        );
-                        if (!data.gamification.leveled_up) {
-                            setTimeout(() => location.reload(), 3500);
-                        }
+                if (response.ok) {
+                    const data = await response.json();
+                    const card = document.getElementById(`week-card-${weekId}`);
+                    const iconArea = document.querySelector(`button[data-week-id="${weekId}"] i`);
+
+                    if (data.is_completed) {
+                        card.classList.add('border-retro-green', 'border-4', 'opacity-90');
+                        iconArea.className = 'ri-check-line text-retro-green font-bold text-xl';
+                        checkGamification(data);
+                        setTimeout(() => location.reload(), 2000); // refresh to update progress bars
                     } else {
-                        location.reload();
+                        card.classList.remove('border-retro-green', 'border-4', 'opacity-90');
+                        iconArea.className = '';
                     }
                 }
-            } catch (error) {
-                console.error('Error toggling activity completion:', error);
+            } catch (e) {
+                console.error("Error toggling week:", e);
+                alert("Game engine error. Try again.");
             }
-        }
+        };
 
-        async function toggleVideoWatched(event, resourceId) {
-            event.preventDefault();
-            event.stopPropagation();
+        // Toggle individual activity
+        window.updateActivity = async function (activityId, isChecked) {
+            const desc = document.getElementById(`activity-desc-${activityId}`);
 
             try {
-                const response = await fetch('/toggle-video/' + resourceId + '/', {
+                const response = await fetch(`/toggle-activity/${activityId}/`, {
                     method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'X-CSRFToken': csrfToken }
                 });
 
-                const data = await response.json();
-                if (data.success) {
-                    if (data.gamification) {
-                        showXPNotification(
-                            data.gamification.xp_awarded,
-                            data.gamification.reason,
-                            data.gamification.leveled_up,
-                            data.gamification.level
-                        );
-                        if (!data.gamification.leveled_up) {
-                            setTimeout(() => location.reload(), 3500);
-                        }
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.is_completed) {
+                        desc.classList.add('line-through', 'text-gray-400');
+                        checkGamification(data);
                     } else {
-                        location.reload();
+                        desc.classList.remove('line-through', 'text-gray-400');
                     }
                 }
-            } catch (error) {
-                console.error('Error toggling video watched:', error);
+            } catch (e) {
+                console.error("Error toggling activity:", e);
             }
-        }
+        };
 
-        async function generateQuiz(weekId) {
-            const button = document.getElementById('quiz-btn-' + weekId);
-            const originalHTML = button.innerHTML;
-
-            // Show loading state
-            button.disabled = true;
-            button.innerHTML = '<i class="ri-loader-4-line animate-spin mr-1"></i>Generating...';
+        // Video toggle
+        window.updateVideoStatus = async function (resourceId, isChecked) {
+            const card = document.getElementById(`resource-card-${resourceId}`);
 
             try {
-                const response = await fetch('/generate-quiz/' + weekId + '/', {
+                const response = await fetch(`/toggle-video/${resourceId}/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.is_watched) {
+                        card.classList.add('opacity-50', 'grayscale');
+                        checkGamification(data);
+                    } else {
+                        card.classList.remove('opacity-50', 'grayscale');
+                    }
+                }
+            } catch (e) {
+                console.error("Error toggling video:", e);
+            }
+        };
+
+        // Generate Quiz
+        window.generateQuiz = async function (weekId) {
+            const btn = document.getElementById(`generate-btn-${weekId}`);
+            btn.innerHTML = '<i class="ri-loader-4-line animate-spin mr-2"></i> ASSEMBLING...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`/generate-quiz/${weekId}/`, {
                     method: 'POST',
                     headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-CSRFToken': csrfToken,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        difficulty: 'medium',
-                        num_questions: 10
-                    })
+                    body: JSON.stringify({ difficulty: 'medium', num_questions: 5 })
                 });
 
                 const data = await response.json();
                 if (data.success) {
-                    // Show success message
-                    button.innerHTML = '<i class="ri-check-line mr-1"></i>Quiz Created!';
-                    button.classList.remove('bg-purple-100', 'text-purple-700');
-                    button.classList.add('bg-green-100', 'text-green-700');
-
-                    // Redirect to quiz after a short delay
-                    setTimeout(() => {
-                        window.location.href = '/quiz/' + data.quiz_id + '/';
-                    }, 1000);
+                    window.location.href = `/quiz/${data.quiz_id}/`;
                 } else {
-                    // Show error
-                    alert(data.error || 'Failed to generate quiz');
-                    button.disabled = false;
-                    button.innerHTML = originalHTML;
+                    alert(data.error || "Failed to assemble boss.");
+                    btn.innerHTML = 'GENERATE BOSS FILE <i class="ri-cpu-line ml-1"></i>';
+                    btn.disabled = false;
                 }
-            } catch (error) {
-                console.error('Error generating quiz:', error);
-                alert('Failed to generate quiz. Please try again.');
-                button.disabled = false;
-                button.innerHTML = originalHTML;
+            } catch (e) {
+                console.error('Error generating quiz:', e);
+                alert('Connection error.');
+                btn.innerHTML = 'GENERATE BOSS FILE <i class="ri-cpu-line ml-1"></i>';
+                btn.disabled = false;
             }
-        }
+        };
     </script>
 </body>
+
 </html>

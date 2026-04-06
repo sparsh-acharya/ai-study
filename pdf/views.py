@@ -448,6 +448,13 @@ def user_dashboard(request):
     """Display user's gamification dashboard with stats and achievements"""
     user_stats = get_user_stats(request.user)
 
+    # Add Daily Quests logic
+    from quest_helper import get_or_create_daily_quests, update_quest_progress
+    daily_quests = get_or_create_daily_quests(request.user)
+
+    # Update login quest progress for the day
+    update_quest_progress(request.user, 'LOGIN', 1)
+
     # Get all achievements with unlock status
     all_achievements = Achievement.objects.all()
     unlocked_ids = UserAchievement.objects.filter(user=request.user).values_list('achievement_id', flat=True)
@@ -466,6 +473,7 @@ def user_dashboard(request):
     return render(request, 'dashboard.html', {
         'user_stats': user_stats,
         'achievements_data': achievements_data,
+        'daily_quests': daily_quests,
     })
 
 
@@ -476,6 +484,43 @@ def mark_achievements_seen(request):
     if request.method == 'POST':
         UserAchievement.objects.filter(user=request.user, is_new=True).update(is_new=False)
         return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+@login_required
+def claim_daily_reward(request):
+    """Claim XP reward for a completed daily quest"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            user_quest_id = data.get('user_quest_id')
+            
+            from pdf.models import UserDailyQuest
+            from gamification_helper import award_xp
+            
+            user_quest = UserDailyQuest.objects.get(id=user_quest_id, user=request.user)
+            
+            if user_quest.is_completed and not user_quest.is_rewarded:
+                # Award XP
+                reward_result = award_xp(request.user, user_quest.quest.reward_xp, f"Daily Quest: {user_quest.quest.title}")
+                
+                # Mark as rewarded
+                user_quest.is_rewarded = True
+                user_quest.save()
+                
+                return JsonResponse({
+                    'success': True, 
+                    'xp_gain': user_quest.quest.reward_xp,
+                    'total_xp': reward_result['total_xp'],
+                    'level': reward_result['level']
+                })
+            else:
+                return JsonResponse({'success': False, 'error': 'Quest not ready or already rewarded'}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+            
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
