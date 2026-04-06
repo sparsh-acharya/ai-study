@@ -1,362 +1,578 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ quiz.title }} - StudyPlan AI</title>
+    <title>Quiz: {{ quiz.title }} — StudyQuest</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#10B981'}}}}</script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { retro: { bg: '#fdf6e3', border: '#1a1a1a', pink: '#ff90e8', cyan: '#00f0ff', green: '#22c55e', yellow: '#ffc900', purple: '#b19cd9', blue: '#90b4fe' } },
+                    boxShadow: { 'brutal': '4px 4px 0px 0px rgba(26,26,26,1)', 'brutal-lg': '8px 8px 0px 0px rgba(26,26,26,1)', 'brutal-sm': '2px 2px 0px 0px rgba(26,26,26,1)' },
+                    animation: { 'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .question-card {
-            transition: all 0.3s ease;
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #fdf6e3;
+            color: #1a1a1a;
+            cursor: crosshair;
         }
-        .answer-option {
-            transition: all 0.2s ease;
+
+        .pixel-font {
+            font-family: 'VT323', monospace;
+        }
+
+        .brutal-card {
+            background: white;
+            border: 3px solid #1a1a1a;
+            box-shadow: 6px 6px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .brutal-btn {
+            background: #1a1a1a;
+            color: white;
+            border: 3px solid #1a1a1a;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
+            transition: all 0.1s ease;
             cursor: pointer;
         }
+
+        .brutal-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .brutal-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(#1a1a1a 1px, transparent 1px), linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: -1px -1px;
+            background-color: #fdf6e3;
+            opacity: 0.05;
+        }
+
+        .win-frame {
+            border: 3px solid #1a1a1a;
+            background: white;
+        }
+
+        .win-title {
+            background: #1a1a1a;
+            color: white;
+            padding: 4px 12px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #1a1a1a;
+        }
+
+        .xp-bar-container {
+            background: white;
+            border: 2px solid #1a1a1a;
+            height: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .xp-bar-fill {
+            height: 100%;
+            border-right: 2px solid #1a1a1a;
+            transition: width 0.3s ease;
+            background: #ffc900;
+        }
+
+        .answer-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border: 2px solid #1a1a1a;
+            background: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
         .answer-option:hover {
             transform: translateX(4px);
+            box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
         }
+
         .answer-option.selected {
-            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            background: #ff90e8;
+            border: 3px solid #1a1a1a;
+            transform: translateX(8px);
+            box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .answer-option input {
+            display: none;
+        }
+
+        .answer-letter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: #1a1a1a;
             color: white;
-            border-color: #4F46E5;
-        }
-        .timer {
-            animation: pulse 2s infinite;
-        }
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+
+            .answer-letter {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                background: #1a1a1a;
+                color: white;
+                font-family: 'VT323', monospace;
+                font-size: 16px;
+                margin-right: 12px;
+            }
+
+            .answers-list {
+                counter-reset: answer;
+            }
+
+            .answer-letter::before {
+                counter-increment: answer;
+                content: counter(answer, upper-alpha);
+            }
+
+            @keyframes blink {
+
+                0%,
+                100% {
+                    opacity: 1;
+                }
+
+                50% {
+                    opacity: 0;
+                }
+            }
+
+            .cursor-blink {
+                animation: blink 1s step-end infinite;
+            }
+
+            /* Scanlines overlay */
+            .scanlines {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.05));
+                background-size: 100% 4px;
+                z-index: 9999;
+                pointer-events: none;
+                opacity: 0.5;
+            }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
+
+<body class="relative min-h-screen">
+    <!-- Grid & Scanlines -->
+    <div class="fixed inset-0 grid-bg pointer-events-none -z-10"></div>
+    <div class="scanlines"></div>
+
+    <!-- Nav -->
+    <nav class="fixed top-0 w-full bg-[#fdf6e3] border-b-4 border-retro-border z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="{% url 'landing' %}" class="flex items-center">
-                        <span class="text-2xl font-['Pacifico'] text-primary">StudyPlan</span>
-                    </a>
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-2">
+                    <div
+                        class="w-8 h-8 bg-retro-pink border-2 border-retro-border flex items-center justify-center shadow-brutal-sm">
+                        <i class="ri-sword-fill font-bold"></i>
+                    </div>
+                    <span class="text-3xl font-bold tracking-tight pixel-font mt-1">BATTLE_ARENA</span>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{% url 'study_plan_detail' quiz.study_plan.id %}" class="text-gray-600 hover:text-primary transition-colors">
-                        <i class="ri-arrow-left-line mr-1"></i>Back to Study Plan
-                    </a>
-                </div>
+                <!-- Quit Button -->
+                <button type="button" onclick="confirmQuit()"
+                    class="brutal-btn bg-white text-red-600 px-4 py-2 text-sm flex items-center">
+                    <i class="ri-logout-box-r-line mr-2"></i> FLEE BATTLE
+                </button>
             </div>
         </div>
     </nav>
 
-    <div id="quiz-intro" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <!-- Quiz Header -->
-        <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
-            <div class="flex items-start justify-between">
-                <div class="flex-1">
-                    <h1 class="text-3xl font-bold mb-2">{{ quiz.title }}</h1>
-                    <p class="text-purple-100 mb-4">{{ quiz.description }}</p>
-                    <div class="flex flex-wrap gap-4 text-sm">
-                        <div class="flex items-center">
-                            <i class="ri-question-line mr-2"></i>
-                            <span>{{ quiz.total_questions }} Questions</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="ri-time-line mr-2"></i>
-                            <span>{% if quiz.time_limit_minutes %}{{ quiz.time_limit_minutes }} minutes{% else %}No time limit{% endif %}</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="ri-trophy-line mr-2"></i>
-                            <span>{{ quiz.xp_reward }} XP Reward</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="ri-bar-chart-line mr-2"></i>
-                            <span>{{ quiz.passing_score }}% to Pass</span>
-                        </div>
-                    </div>
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 pt-24 pb-32 flex flex-col min-h-screen">
+
+        <!-- Header / Tracker -->
+        <div class="win-frame shadow-brutal mb-8 z-30">
+            <div class="win-title bg-retro-border text-white px-4 py-2 flex justify-between items-center">
+                <span>{{ quiz.title }}</span>
+                <span class="pixel-font text-xl text-retro-yellow" id="timer">00:00</span>
+            </div>
+            <div
+                class="p-3 bg-white flex justify-between items-center flex-wrap gap-4 border-b-2 border-dashed border-gray-300">
+                <div class="text-xs font-bold uppercase tracking-widest text-[#666]">
+                    Boss Health (Questions Left: <span id="progress-text">1/{{ quiz.total_questions }}</span>)
                 </div>
-                <div class="ml-4">
-                    <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                        <i class="ri-file-list-3-line text-4xl"></i>
+                <div class="w-64">
+                    <div class="xp-bar-container">
+                        <div class="xp-bar-fill bg-retro-pink transition-all duration-300" id="progress-bar"
+                            style="width: 0%;"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Previous Attempts -->
-        {% if attempts %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-            <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                <i class="ri-history-line text-primary mr-2"></i>
-                Previous Attempts
-            </h2>
-            <div class="space-y-3">
-                {% for attempt in attempts %}
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 rounded-full flex items-center justify-center {% if attempt.passed %}bg-green-100 text-green-600{% else %}bg-red-100 text-red-600{% endif %}">
-                            <i class="{% if attempt.passed %}ri-check-line{% else %}ri-close-line{% endif %} text-2xl"></i>
-                        </div>
-                        <div>
-                            <div class="font-semibold text-gray-900">{{ attempt.percentage }}% - {{ attempt.score }}/{{ attempt.max_score }}</div>
-                            <div class="text-sm text-gray-600">{{ attempt.completed_at|date:"M d, Y H:i" }} • {{ attempt.time_taken_formatted }}</div>
-                        </div>
-                    </div>
-                    <a href="{% url 'quiz_results' attempt.id %}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">
-                        View Results
-                    </a>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
+        <!-- Quiz Container -->
+        <div id="quiz-container" class="flex-grow relative">
 
-        <!-- Start Quiz Button -->
-        <div class="bg-white rounded-xl shadow-sm p-8 text-center">
-            {% if incomplete_attempt %}
-                <div class="mb-6">
-                    <i class="ri-error-warning-line text-yellow-500 text-5xl mb-4"></i>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Incomplete Attempt Found</h3>
-                    <p class="text-gray-600">You have an unfinished quiz attempt. You can continue or start fresh.</p>
+            <!-- Pre-battle Screen -->
+            <div id="start-screen" class="win-frame shadow-brutal-lg max-w-2xl mx-auto mt-12 bg-white text-center p-8">
+                <div
+                    class="w-24 h-24 mx-auto border-4 border-retro-border bg-retro-yellow flex items-center justify-center text-5xl shadow-brutal transform -rotate-3 mb-6 animate-pulse">
+                    👾
                 </div>
-                <div class="flex justify-center space-x-4">
-                    <button onclick="startQuiz()" class="px-8 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all font-semibold">
-                        Start New Attempt
-                    </button>
+                <h1 class="text-4xl font-bold font-['Space_Grotesk'] tracking-tight mb-4 uppercase">A wild BOSS
+                    appeared!</h1>
+                <div
+                    class="pixel-font text-xl text-gray-700 bg-[#f4f4f4] border-2 border-retro-border p-4 mb-8 text-left leading-relaxed">
+                    <p class="text-retro-blue font-bold">> ENEMY_DATA_LOADED</p>
+                    <p>> TYPE: {{ quiz.title }}</p>
+                    <p>> HEALTH: {{ quiz.total_questions }} Questions</p>
+                    <p>> LOOT_DROP: {{ quiz.xp_reward }} XP on Victory</p>
+                    <p class="mt-4 animate-pulse">> WAITING_FOR_PLAYER_INPUT <span class="cursor-blink">_</span></p>
                 </div>
-            {% else %}
-                <i class="ri-play-circle-line text-primary text-6xl mb-4"></i>
-                <h3 class="text-2xl font-bold text-gray-900 mb-2">Ready to Test Your Knowledge?</h3>
-                <p class="text-gray-600 mb-6">Answer all questions to the best of your ability. Good luck!</p>
-                <button onclick="startQuiz()" class="px-8 py-4 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold text-lg">
-                    <i class="ri-rocket-line mr-2"></i>Start Quiz
-                </button>
-            {% endif %}
-        </div>
-    </div>
 
-    <!-- Quiz Taking Interface (Hidden initially) -->
-    <div id="quiz-interface" class="hidden max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <!-- Timer and Progress -->
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="text-sm text-gray-600">
-                        Question <span id="current-question-num">1</span> of {{ quiz.total_questions }}
-                    </div>
-                    <div class="flex-1 bg-gray-200 rounded-full h-2 w-64">
-                        <div id="progress-bar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                </div>
-                {% if quiz.time_limit_minutes %}
-                <div class="flex items-center space-x-2 timer">
-                    <i class="ri-time-line text-2xl text-primary"></i>
-                    <span id="timer" class="text-2xl font-bold text-gray-900">{{ quiz.time_limit_minutes }}:00</span>
+                {% if incomplete_attempt %}
+                <div class="bg-retro-yellow border-2 border-retro-border p-4 mb-6 shadow-brutal-sm text-left">
+                    <p class="font-bold flex items-center"><i class="ri-error-warning-fill mr-2 text-xl"></i> Saved Game
+                        Found!</p>
+                    <p class="text-sm mt-1">You have an incomplete battle. Continuing will resume where you left off.
+                    </p>
                 </div>
                 {% endif %}
+
+                <button id="start-btn"
+                    class="brutal-btn w-full bg-retro-pink text-retro-border py-5 text-2xl tracking-widest flex items-center justify-center">
+                    <i class="ri-sword-fill mr-3"></i> ATTACK (START QUIZ)
+                </button>
+                <div class="mt-4 text-xs font-bold uppercase text-gray-500">Requires {{ quiz.passing_score }}% damage to
+                    defeat</div>
             </div>
-        </div>
 
-        <!-- Question Card -->
-        <div id="question-container" class="bg-white rounded-xl shadow-lg p-8 mb-6">
-            <!-- Questions will be loaded here dynamically -->
-        </div>
+            <!-- Questions Form -->
+            <form id="quiz-form" class="hidden">
+                {% csrf_token %}
+                <input type="hidden" id="attempt-id" value="{{ incomplete_attempt.id|default:'' }}">
 
-        <!-- Navigation Buttons -->
-        <div class="flex justify-between">
-            <button id="prev-btn" onclick="previousQuestion()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all font-semibold disabled:opacity-50" disabled>
-                <i class="ri-arrow-left-line mr-2"></i>Previous
-            </button>
-            <button id="next-btn" onclick="nextQuestion()" class="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-semibold">
-                Next<i class="ri-arrow-right-line ml-2"></i>
-            </button>
-            <button id="submit-btn" onclick="submitQuiz()" class="hidden px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold">
-                <i class="ri-check-line mr-2"></i>Submit Quiz
-            </button>
+                {% for question in quiz.questions.all %}
+                <div class="question-card hidden" data-index="{{ forloop.counter0 }}" data-id="{{ question.id }}"
+                    data-answered="false">
+
+                    <div class="win-frame shadow-brutal-lg mb-8 bg-white relative">
+                        <!-- Enemy Sprite Area (Decorative) -->
+                        <div
+                            class="absolute -right-4 -top-6 w-16 h-16 bg-white border-2 border-retro-border shadow-brutal-sm flex items-center justify-center text-2xl transform rotate-6 z-10 pixel-art">
+                            🐛
+                        </div>
+
+                        <div class="win-title bg-retro-blue text-retro-border">
+                            <span>ATTACK {{ forloop.counter }} OF {{ quiz.total_questions }}</span>
+                            <span class="pixel-font text-lg">{{ question.points }} DMG</span>
+                        </div>
+
+                        <div class="p-6 md:p-8">
+                            <!-- Question Text -->
+                            <div class="mb-8 p-4 bg-[#fdf6e3] border-l-4 border-retro-border">
+                                <h3 class="text-xl md:text-2xl font-bold font-['Space_Grotesk'] leading-relaxed">
+                                    {{ question.question_text }}
+                                </h3>
+                            </div>
+
+                            <!-- Answers List -->
+                            <div class="space-y-3 pl-2">
+                                {% for answer in question.answers.all %}
+                                <label class="answer-option relative" id="opt-{{ answer.id }}"
+                                    data-correct="{{ answer.is_correct|yesno:'true,false' }}">
+                                    <input type="radio" name="q_{{ question.id }}" value="{{ answer.id }}"
+                                        onchange="selectAnswer('{{ answer.id }}', '{{ question.id }}')">
+                                    <span class="answer-letter shadow-brutal-sm">{{ forloop.counter }}</span>
+                                    <span>
+                                        {{ answer.answer_text }}
+                                    </span>
+                                    <i
+                                        class="ri-check-line absolute right-4 top-1/2 -translate-y-1/2 text-retro-border text-xl font-bold hidden check-icon"></i>
+                                </label>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Feedback Panel (hidden until answered) -->
+                            <div id="feedback-{{ question.id }}"
+                                class="hidden mt-6 p-4 border-2 border-retro-border shadow-brutal-sm">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span id="feedback-icon-{{ question.id }}" class="text-2xl"></span>
+                                    <span id="feedback-title-{{ question.id }}"
+                                        class="pixel-font text-xl font-bold uppercase tracking-wider"></span>
+                                </div>
+                                {% if question.explanation %}
+                                <div class="border-t-2 border-dashed border-gray-300 pt-3 mt-1">
+                                    <p class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">BATTLE
+                                        NOTES:</p>
+                                    <p class="text-sm font-medium text-gray-700">{{ question.explanation }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Navigation Controls -->
+                <div id="quiz-controls" class="flex justify-between items-center mt-6 hidden">
+                    <button type="button" id="prev-btn"
+                        class="brutal-btn bg-white text-retro-border px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="ri-arrow-left-s-line cursor-pointer"></i> RETREAT
+                    </button>
+
+                    <button type="button" id="next-btn" class="brutal-btn bg-retro-border text-white px-8 py-3">
+                        NEXT STRIKE <i class="ri-arrow-right-s-line"></i>
+                    </button>
+
+                    <button type="button" id="submit-btn"
+                        class="brutal-btn bg-retro-yellow text-retro-border px-8 py-3 hidden animate-pulse">
+                        FINISH MOVE <i class="ri-skull-2-line ml-2"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Loading Screen overlay -->
+            <div id="loading-overlay"
+                class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center hidden">
+                <div
+                    class="w-16 h-16 border-4 border-retro-border border-t-retro-pink rounded-full animate-spin mb-4 shadow-brutal-sm">
+                </div>
+                <div class="pixel-font text-2xl font-bold text-retro-border tracking-wider">CALCULATING_DAMAGE...</div>
+            </div>
+
         </div>
     </div>
 
-    {% csrf_token %}
+    <!-- Scripts -->
     <script>
-        let currentAttemptId = null;
+        const quizId = {{ quiz.id }};
+        const totalQuestions = {{ quiz.total_questions }};
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const submitUrl = "{% url 'submit_quiz' 0 %}";
+
+        let currentAttemptId = document.getElementById('attempt-id').value;
         let currentQuestionIndex = 0;
-        let userAnswers = {};
-        let startTime = null;
-        let timerInterval = null;
+        let timerInterval;
+        let secondsElapsed = 0;
+        let answers = {}; // {question_id: answer_id}
 
-        // Load questions data
-        const quizData = [
-            {% for question in quiz.questions.all %}
-            {
-                id: {{ question.id }},
-                text: `{{ question.question_text|escapejs }}`,
-                answers: [
-                    {% for answer in question.answers.all %}
-                    {
-                        id: {{ answer.id }},
-                        text: `{{ answer.answer_text|escapejs }}`
-                    }{% if not forloop.last %},{% endif %}
-                    {% endfor %}
-                ]
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const quizForm = document.getElementById('quiz-form');
+        const quizControls = document.getElementById('quiz-controls');
+        const questionCards = document.querySelectorAll('.question-card');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const timerDisplay = document.getElementById('timer');
+        const loadingOverlay = document.getElementById('loading-overlay');
 
-        async function startQuiz() {
-            try {
-                const response = await fetch('/quiz/{{ quiz.id }}/start/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'Content-Type': 'application/json'
-                    }
-                });
+        // Functions
+        const updateTimerDisplay = () => {
+            const m = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+            const s = (secondsElapsed % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${m}:${s}`;
+        };
 
-                const data = await response.json();
-                console.log('Start quiz response:', data);
+        const updateProgress = () => {
+            const answeredCount = Object.keys(answers).length;
+            const percentage = (answeredCount / totalQuestions) * 100;
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `${currentQuestionIndex + 1}/${totalQuestions}`;
 
-                if (data.success) {
-                    currentAttemptId = data.attempt_id;
-                    startTime = Date.now();
+            // Toggle next/submit based on answers
+            const currentQId = questionCards[currentQuestionIndex].dataset.id;
+            const hasAnsweredCurrent = !!answers[currentQId];
 
-                    // Hide intro, show quiz
-                    document.getElementById('quiz-intro').classList.add('hidden');
-                    document.getElementById('quiz-interface').classList.remove('hidden');
-
-                    // Start timer if applicable
-                    {% if quiz.time_limit_minutes %}
-                    startTimer({{ quiz.time_limit_minutes }} * 60);
-                    {% endif %}
-
-                    // Load first question
-                    loadQuestion(0);
-                } else {
-                    console.error('Failed to start quiz:', data);
-                    alert('Failed to start quiz: ' + (data.error || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('Error starting quiz:', error);
-                alert('Failed to start quiz. Please try again. Error: ' + error.message);
+            if (currentQuestionIndex === totalQuestions - 1) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+                submitBtn.disabled = !hasAnsweredCurrent;
+                if (!hasAnsweredCurrent) submitBtn.classList.replace('bg-retro-yellow', 'bg-gray-300');
+                else submitBtn.classList.replace('bg-gray-300', 'bg-retro-yellow');
+            } else {
+                submitBtn.classList.add('hidden');
+                nextBtn.classList.remove('hidden');
             }
-        }
+        };
 
-        function loadQuestion(index) {
-            currentQuestionIndex = index;
-            const question = quizData[index];
+        const showQuestion = (index) => {
+            questionCards.forEach(card => card.classList.add('hidden'));
+            questionCards[index].classList.remove('hidden');
 
-            // Update progress
-            document.getElementById('current-question-num').textContent = index + 1;
-            const progress = ((index + 1) / quizData.length) * 100;
-            document.getElementById('progress-bar').style.width = progress + '%';
+            prevBtn.disabled = index === 0;
+            updateProgress();
+        };
 
-            // Build question HTML
-            let html = `
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                    ${question.text}
-                </h2>
-                <div class="space-y-3">
-            `;
+        // UI trigger when radio changes
+        window.selectAnswer = (answerId, questionId) => {
+            // Don't allow re-answering
+            const qCard = document.querySelector(`.question-card[data-id="${questionId}"]`);
+            if (qCard.dataset.answered === 'true') return;
+            qCard.dataset.answered = 'true';
 
-            question.answers.forEach((answer, idx) => {
-                const isSelected = userAnswers[question.id] === answer.id;
-                html += `
-                    <div class="answer-option ${isSelected ? 'selected' : ''} p-4 border-2 rounded-xl ${isSelected ? 'border-primary' : 'border-gray-200'}"
-                         onclick="selectAnswer(${question.id}, ${answer.id})">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 rounded-full border-2 ${isSelected ? 'border-white bg-white/20' : 'border-gray-300'} flex items-center justify-center mr-4">
-                                <span class="font-bold">${String.fromCharCode(65 + idx)}</span>
-                            </div>
-                            <span class="text-lg">${answer.text}</span>
-                        </div>
-                    </div>
-                `;
+            answers[questionId] = answerId;
+
+            // Disable all options for this question
+            qCard.querySelectorAll('.answer-option input').forEach(inp => inp.disabled = true);
+
+            const selectedOpt = document.getElementById(`opt-${answerId}`);
+            const isCorrect = selectedOpt.dataset.correct === 'true';
+
+            // Highlight selected answer
+            selectedOpt.classList.add('selected');
+            selectedOpt.querySelector('.check-icon').classList.remove('hidden');
+
+            // Highlight all correct answers in green
+            qCard.querySelectorAll('.answer-option').forEach(opt => {
+                if (opt.dataset.correct === 'true') {
+                    opt.style.background = '#d1fae5'; // green tint
+                    opt.style.borderColor = '#22c55e';
+                }
             });
 
-            html += '</div>';
-            document.getElementById('question-container').innerHTML = html;
-
-            // Update navigation buttons
-            document.getElementById('prev-btn').disabled = index === 0;
-
-            if (index === quizData.length - 1) {
-                document.getElementById('next-btn').classList.add('hidden');
-                document.getElementById('submit-btn').classList.remove('hidden');
-            } else {
-                document.getElementById('next-btn').classList.remove('hidden');
-                document.getElementById('submit-btn').classList.add('hidden');
+            // If wrong, highlight the selected in red
+            if (!isCorrect) {
+                selectedOpt.style.background = '#fee2e2'; // red tint
+                selectedOpt.style.borderColor = '#ef4444';
             }
-        }
 
-        function selectAnswer(questionId, answerId) {
-            userAnswers[questionId] = answerId;
-            loadQuestion(currentQuestionIndex); // Reload to show selection
-        }
-
-        function previousQuestion() {
-            if (currentQuestionIndex > 0) {
-                loadQuestion(currentQuestionIndex - 1);
-            }
-        }
-
-        function nextQuestion() {
-            if (currentQuestionIndex < quizData.length - 1) {
-                loadQuestion(currentQuestionIndex + 1);
-            }
-        }
-
-        async function submitQuiz() {
-            // Check if all questions are answered
-            const unanswered = quizData.filter(q => !userAnswers[q.id]);
-            if (unanswered.length > 0) {
-                if (!confirm(`You have ${unanswered.length} unanswered question(s). Submit anyway?`)) {
-                    return;
+            // Show feedback panel
+            const feedbackPanel = document.getElementById(`feedback-${questionId}`);
+            if (feedbackPanel) {
+                const icon = document.getElementById(`feedback-icon-${questionId}`);
+                const title = document.getElementById(`feedback-title-${questionId}`);
+                feedbackPanel.classList.remove('hidden');
+                if (isCorrect) {
+                    feedbackPanel.style.background = '#d1fae5';
+                    feedbackPanel.style.borderColor = '#22c55e';
+                    icon.textContent = '⚔️';
+                    title.textContent = 'Critical Hit! Correct!';
+                    title.style.color = '#15803d';
+                } else {
+                    feedbackPanel.style.background = '#fee2e2';
+                    feedbackPanel.style.borderColor = '#ef4444';
+                    icon.textContent = '💀';
+                    title.textContent = '-1 HP. Wrong Answer!';
+                    title.style.color = '#b91c1c';
                 }
             }
 
-            const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+            updateProgress();
+        };
+
+        const startQuiz = async () => {
+            startBtn.innerHTML = '<i class="ri-loader-4-line animate-spin mr-2"></i> LOADING...';
+            startBtn.disabled = true;
 
             try {
-                const response = await fetch(`/quiz-attempt/${currentAttemptId}/submit/`, {
+                if (!currentAttemptId) {
+                    const res = await fetch(`/quiz/${quizId}/start/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken }
+                    });
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.error);
+                    currentAttemptId = data.attempt_id;
+                    document.getElementById('attempt-id').value = currentAttemptId;
+                }
+
+                startScreen.classList.add('hidden');
+                quizForm.classList.remove('hidden');
+                quizControls.classList.remove('hidden');
+
+                showQuestion(0);
+                timerInterval = setInterval(() => {
+                    secondsElapsed++;
+                    updateTimerDisplay();
+                }, 1000);
+            } catch (err) {
+                alert("Game Error: Could not start battle.");
+                startBtn.innerHTML = '<i class="ri-sword-fill mr-3"></i> ATTACK';
+                startBtn.disabled = false;
+            }
+        };
+
+        const submitQuiz = async () => {
+            if (Object.keys(answers).length < totalQuestions) {
+                if (!confirm("Your attacks are not fully charged (unanswered questions). Finish move anyway?")) return;
+            }
+
+            loadingOverlay.classList.remove('hidden');
+            clearInterval(timerInterval);
+
+            try {
+                const finalUrl = submitUrl.replace('0', currentAttemptId);
+                const res = await fetch(finalUrl, {
                     method: 'POST',
                     headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-CSRFToken': csrfToken,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        answers: userAnswers,
-                        time_taken_seconds: timeTaken
-                    })
+                    body: JSON.stringify({ answers, time_taken_seconds: secondsElapsed })
                 });
 
-                const data = await response.json();
+                const data = await res.json();
                 if (data.success) {
-                    // Redirect to results
                     window.location.href = `/quiz-attempt/${currentAttemptId}/results/`;
+                } else {
+                    throw new Error(data.error);
                 }
-            } catch (error) {
-                console.error('Error submitting quiz:', error);
-                alert('Failed to submit quiz. Please try again.');
+            } catch (err) {
+                alert("Error finishing battle.");
+                loadingOverlay.classList.add('hidden');
             }
-        }
+        };
 
-        function startTimer(seconds) {
-            let remaining = seconds;
-            const timerEl = document.getElementById('timer');
+        window.confirmQuit = () => {
+            if (confirm("Fleeing battle? Your progress will be saved, but you coward...")) {
+                window.location.href = `{% url 'study_plan_detail' quiz.study_plan.id %}`;
+            }
+        };
 
-            timerInterval = setInterval(() => {
-                remaining--;
-                const mins = Math.floor(remaining / 60);
-                const secs = remaining % 60;
-                timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        // Event Listeners
+        startBtn.addEventListener('click', startQuiz);
+        prevBtn.addEventListener('click', () => { if (currentQuestionIndex > 0) showQuestion(--currentQuestionIndex); });
+        nextBtn.addEventListener('click', () => { if (currentQuestionIndex < totalQuestions - 1) showQuestion(++currentQuestionIndex); });
+        submitBtn.addEventListener('click', submitQuiz);
 
-                if (remaining <= 0) {
-                    clearInterval(timerInterval);
-                    alert('Time is up! Submitting your quiz...');
-                    submitQuiz();
-                }
-            }, 1000);
-        }
     </script>
 </body>
-</html>
 
+</html>

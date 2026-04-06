@@ -1,145 +1,159 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'landing.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - StudyPlan AI</title>
-    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <script>tailwind.config = { theme: { extend: { colors: { primary: '#4F46E5', secondary: '#10B981' }, borderRadius: { 'none': '0px', 'sm': '4px', DEFAULT: '8px', 'md': '12px', 'lg': '16px', 'xl': '20px', '2xl': '24px', '3xl': '32px', 'full': '9999px', 'button': '8px' } } } }</script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
-</head>
+{% block content %}
+<div class="flex-grow flex items-center justify-center py-12 mt-16 px-4 pb-20">
+    <!-- Window Frame -->
+    <div
+        class="win-frame shadow-brutal-lg max-w-lg w-full relative z-10 transform sm:hover:-translate-y-1 transition-transform">
 
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="{% url 'landing' %}" class="flex items-center">
-                        <span class="text-2xl font-['Pacifico'] text-primary">StudyPlan</span>
-                    </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{% url 'login' %}" class="text-gray-600 hover:text-primary transition-colors">Sign In</a>
+        <!-- Window Title Bar -->
+        <div class="win-title bg-retro-pink text-retro-border">
+            <span>REGISTER.exe</span>
+            <div class="flex space-x-1">
+                <div class="w-3 h-3 bg-white border border-retro-border"></div>
+                <div class="w-3 h-3 bg-white border border-retro-border"></div>
+                <div class="w-3 h-3 bg-retro-blue border border-retro-border flex items-center justify-center">
+                    <i class="ri-close-line text-[8px] text-retro-border"></i>
                 </div>
             </div>
         </div>
-    </nav>
 
-    <!-- Registration Form -->
-    <div class="flex items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
-            <div>
-                <h2 class="mt-6 text-center text-3xl font-bold text-gray-900">
-                    Create your account
-                </h2>
-                <p class="mt-2 text-center text-sm text-gray-600">
-                    Or
-                    <a href="{% url 'login' %}" class="font-medium text-primary hover:text-primary/80">
-                        sign in to your existing account
-                    </a>
-                </p>
+        <!-- Content Area -->
+        <div class="p-6 sm:p-8 bg-white">
+            <div class="text-center mb-6">
+                <div
+                    class="inline-block bg-retro-blue border-2 border-retro-border w-14 h-14 shadow-brutal-sm mb-3 transform rotate-3 flex items-center justify-center">
+                    <i class="ri-user-add-fill text-2xl"></i>
+                </div>
+                <h2 class="text-3xl font-bold font-['Space_Grotesk'] tracking-tight">Create Character</h2>
+                <p class="text-gray-600 font-medium px-4 mt-2">Join the academy and start earning XP.</p>
             </div>
 
-            <!-- Messages -->
             {% if messages %}
+            <div class="mb-6 space-y-2">
                 {% for message in messages %}
-                    <div class="rounded-md p-4 {% if message.tags == 'error' %}bg-red-50 text-red-800{% else %}bg-green-50 text-green-800{% endif %}">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                {% if message.tags == 'error' %}
-                                    <i class="ri-error-warning-line ri-lg"></i>
-                                {% else %}
-                                    <i class="ri-check-line ri-lg"></i>
-                                {% endif %}
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium">{{ message }}</p>
-                            </div>
-                        </div>
-                    </div>
+                <div
+                    class="bg-{% if message.tags == 'error' %}red-100 border-red-300 text-red-700{% else %}green-100 border-green-300 text-green-700{% endif %} border-2 p-3 text-sm font-bold flex items-center shadow-brutal-sm">
+                    <i
+                        class="{% if message.tags == 'error' %}ri-error-warning-fill{% else %}ri-checkbox-circle-fill{% endif %} mr-2 text-lg"></i>
+                    {{ message }}
+                </div>
                 {% endfor %}
+            </div>
             {% endif %}
 
-            <form class="mt-8 space-y-6" method="post">
+            <form method="POST" action="{% url 'register' %}">
                 {% csrf_token %}
                 <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
+                    <!-- Names Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label for="first_name" class="block text-sm font-medium text-gray-700">First Name</label>
-                            <input id="first_name" name="first_name" type="text" required 
-                                   class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
-                                   placeholder="First Name">
+                            <label for="first_name"
+                                class="block text-xs font-bold text-gray-900 mb-1 uppercase tracking-wider">First Name
+                                <span class="text-red-500">*</span></label>
+                            <input type="text" name="first_name" id="first_name" required
+                                class="w-full bg-[#fdf6e3] border-2 border-retro-border text-gray-900 px-3 py-2.5 font-semibold focus:outline-none focus:ring-4 focus:ring-retro-pink focus:bg-white transition-colors shadow-[2px_2px_0_0_#1a1a1a]"
+                                placeholder="Player">
                         </div>
                         <div>
-                            <label for="last_name" class="block text-sm font-medium text-gray-700">Last Name</label>
-                            <input id="last_name" name="last_name" type="text" required 
-                                   class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
-                                   placeholder="Last Name">
+                            <label for="last_name"
+                                class="block text-xs font-bold text-gray-900 mb-1 uppercase tracking-wider">Last
+                                Name</label>
+                            <input type="text" name="last_name" id="last_name"
+                                class="w-full bg-[#fdf6e3] border-2 border-retro-border text-gray-900 px-3 py-2.5 font-semibold focus:outline-none focus:ring-4 focus:ring-retro-pink focus:bg-white transition-colors shadow-[2px_2px_0_0_#1a1a1a]"
+                                placeholder="One">
                         </div>
                     </div>
-                    
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                        <input id="username" name="username" type="text" required 
-                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
-                               placeholder="Username">
-                    </div>
-                    
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input id="email" name="email" type="email" required 
-                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
-                               placeholder="Email address">
-                    </div>
-                    
-                    <div>
-                        <label for="password1" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input id="password1" name="password1" type="password" required 
-                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
-                               placeholder="Password">
-                    </div>
-                    
-                    <div>
-                        <label for="password2" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                        <input id="password2" name="password2" type="password" required 
-                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
-                               placeholder="Confirm Password">
-                    </div>
-                </div>
 
-                <div class="flex items-center">
-                    <input id="agree-terms" name="agree-terms" type="checkbox" required
-                           class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                    <label for="agree-terms" class="ml-2 block text-sm text-gray-900">
-                        I agree to the <a href="#" class="text-primary hover:text-primary/80">Terms of Service</a> and 
-                        <a href="#" class="text-primary hover:text-primary/80">Privacy Policy</a>
-                    </label>
-                </div>
+                    <!-- Username Field -->
+                    <div>
+                        <label for="username"
+                            class="block text-xs font-bold text-gray-900 mb-1 uppercase tracking-wider">Player ID
+                            (Username) <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="ri-user-line text-gray-500 font-bold"></i>
+                            </div>
+                            <input type="text" name="username" id="username" required
+                                class="w-full bg-[#fdf6e3] border-2 border-retro-border text-gray-900 pl-10 pr-3 py-2.5 font-semibold focus:outline-none focus:ring-4 focus:ring-retro-yellow focus:bg-white transition-colors shadow-[2px_2px_0_0_#1a1a1a]"
+                                placeholder="Choose a legendary name">
+                        </div>
+                    </div>
 
-                <div>
-                    <button type="submit" 
-                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                            <i class="ri-user-add-line ri-lg text-primary/60 group-hover:text-primary/80"></i>
-                        </span>
-                        Create Account
+                    <!-- Email Field -->
+                    <div>
+                        <label for="email"
+                            class="block text-xs font-bold text-gray-900 mb-1 uppercase tracking-wider">Email Address
+                            <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="ri-mail-line text-gray-500 font-bold"></i>
+                            </div>
+                            <input type="email" name="email" id="email" required
+                                class="w-full bg-[#fdf6e3] border-2 border-retro-border text-gray-900 pl-10 pr-3 py-2.5 font-semibold focus:outline-none focus:ring-4 focus:ring-retro-blue focus:bg-white transition-colors shadow-[2px_2px_0_0_#1a1a1a]"
+                                placeholder="player@example.com">
+                        </div>
+                    </div>
+
+                    <!-- Passwords Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="password1"
+                                class="block text-xs font-bold text-gray-900 mb-1 uppercase tracking-wider">Passcode
+                                <span class="text-red-500">*</span></label>
+                            <input type="password" name="password1" id="password1" required minlength="8"
+                                class="w-full bg-[#fdf6e3] border-2 border-retro-border text-gray-900 px-3 py-2.5 font-semibold focus:outline-none focus:ring-4 focus:ring-retro-pink focus:bg-white transition-colors shadow-[2px_2px_0_0_#1a1a1a]"
+                                placeholder="••••••••">
+                        </div>
+                        <div>
+                            <label for="password2"
+                                class="block text-xs font-bold text-gray-900 mb-1 uppercase tracking-wider">Confirm
+                                <span class="text-red-500">*</span></label>
+                            <input type="password" name="password2" id="password2" required minlength="8"
+                                class="w-full bg-[#fdf6e3] border-2 border-retro-border text-gray-900 px-3 py-2.5 font-semibold focus:outline-none focus:ring-4 focus:ring-retro-pink focus:bg-white transition-colors shadow-[2px_2px_0_0_#1a1a1a]"
+                                placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit"
+                        class="brutal-btn brutal-btn-yellow w-full py-4 mt-6 text-lg flex items-center justify-center font-bold tracking-widest relative overflow-hidden group">
+                        <span class="relative z-10">INITIALIZE</span>
+                        <i
+                            class="ri-rocket-2-fill ml-2 relative z-10 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform"></i>
                     </button>
+
+                    <p class="text-xs text-center text-gray-500 font-bold mt-3">By joining, you agree to grind XP and
+                        slay procrastination.</p>
                 </div>
             </form>
+
+            <!-- Bottom Link -->
+            <div class="mt-6 text-center pt-5 border-t-2 border-dashed border-gray-300">
+                <p class="text-sm font-bold text-gray-600">
+                    Already have an account?
+                    <a href="{% url 'login' %}"
+                        class="bg-retro-blue px-2 py-1 border-2 border-transparent hover:border-retro-border text-retro-border transition-colors">Login</a>
+                </p>
+            </div>
         </div>
     </div>
-</body>
 
-</html>
+    <!-- Decorative Accents -->
+    <div class="fixed top-24 right-20 w-16 h-16 bg-white border-3 border-retro-border -z-10 shadow-brutal animate-bounce hidden lg:block"
+        style="animation-duration: 4s;">
+        <i class="ri-star-smile-fill text-4xl flex items-center justify-center h-full text-retro-yellow"></i>
+    </div>
+    <div
+        class="fixed bottom-32 left-16 w-24 h-24 bg-retro-pink border-3 border-retro-border -z-10 shadow-brutal transform rotate-12 hidden lg:block">
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const main = document.querySelector('main > div:first-child');
+        if (main && !main.classList.contains('auth-page-marker')) main.style.display = 'none';
+        document.querySelector('main').classList.add('auth-page-marker');
+    });
+</script>
+{% endblock %}

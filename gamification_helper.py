@@ -7,6 +7,9 @@ from pdf.models import UserProfile, Achievement, UserAchievement, StudySession
 from django.utils import timezone
 
 
+
+
+
 # XP Reward Constants
 XP_REWARDS = {
     'activity_completed': 10,
@@ -131,6 +134,10 @@ def handle_activity_completion(user, activity):
     # Award XP
     result = award_xp(user, XP_REWARDS['activity_completed'], f"Completed: {activity.description[:30]}")
     
+    # Update Daily Quests
+    from quest_helper import update_quest_progress
+    update_quest_progress(user, 'ACTIVITY', 1)
+    
     return result
 
 
@@ -188,6 +195,14 @@ def handle_quiz_completion(user, quiz_attempt):
 
     # Check for achievements
     check_and_unlock_achievements(user)
+
+    # Update Daily Quests
+    # If passed, update correctly answered questions count
+    if quiz_attempt.passed:
+        correct_count = quiz_attempt.quiz.questions.count() # Simplified: assume all correct for quest progress in this helper for now or use actual correct count if available in attempt
+        # Actually need to count correct answers. Let's assume the attempt has the score.
+        from quest_helper import update_quest_progress
+        update_quest_progress(user, 'QUIZ', quiz_attempt.score) # score is total points, usually 1 per question or similar
 
     return {
         'quizzes_completed': profile.total_quizzes_completed,

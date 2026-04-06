@@ -77,3 +77,4 @@ def process_document_with_gemini(docLink: str, prompt: str) -> str:
     except Exception as e:
         print(f"Error in process_document_with_gemini: {str(e)}")
         raise e
+

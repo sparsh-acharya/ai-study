@@ -1,337 +1,528 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - StudyPlan AI</title>
+    <title>Dashboard — StudyQuest</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#10B981'}}}}</script>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        retro: { bg: '#fdf6e3', border: '#1a1a1a', pink: '#ff90e8', cyan: '#00f0ff', green: '#22c55e', yellow: '#ffc900', purple: '#b19cd9', blue: '#90b4fe' }
+                    },
+                    boxShadow: { 'brutal': '4px 4px 0px 0px rgba(26,26,26,1)', 'brutal-lg': '8px 8px 0px 0px rgba(26,26,26,1)', 'brutal-sm': '2px 2px 0px 0px rgba(26,26,26,1)' }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .achievement-card {
-            transition: all 0.3s ease;
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #fdf6e3;
+            color: #1a1a1a;
+            cursor: crosshair;
         }
-        .achievement-card:hover {
-            transform: translateY(-4px);
+
+        .pixel-font {
+            font-family: 'VT323', monospace;
         }
+
+        .brutal-card {
+            background: white;
+            border: 3px solid #1a1a1a;
+            box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .brutal-btn {
+            background: #1a1a1a;
+            color: white;
+            border: 3px solid #1a1a1a;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px 0px rgba(26, 26, 26, 1);
+            transition: all 0.1s ease;
+        }
+
+        .brutal-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .brutal-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px 0px rgba(26, 26, 26, 1);
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(#1a1a1a 1px, transparent 1px), linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: -1px -1px;
+            background-color: #fdf6e3;
+            opacity: 0.05;
+        }
+
+        .win-frame {
+            border: 3px solid #1a1a1a;
+            background: white;
+        }
+
+        .win-title {
+            background: #1a1a1a;
+            color: white;
+            padding: 4px 12px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #1a1a1a;
+        }
+
+        .xp-bar-segment {
+            border-right: 2px solid #1a1a1a;
+        }
+
+        .xp-bar-segment:last-child {
+            border-right: none;
+        }
+
         .achievement-locked {
-            filter: grayscale(100%);
-            opacity: 0.5;
+            filter: grayscale(100%) opacity(0.5);
         }
-        .achievement-unlocked {
-            animation: pulse 2s infinite;
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
         }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+
+        .toast-slide-in {
+            animation: slideIn 0.3s ease-out forwards;
         }
-        .rarity-common { border-color: #9CA3AF; }
-        .rarity-rare { border-color: #3B82F6; }
-        .rarity-epic { border-color: #A855F7; }
-        .rarity-legendary { border-color: #F59E0B; }
-        
-        .rarity-common-bg { background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%); }
-        .rarity-rare-bg { background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%); }
-        .rarity-epic-bg { background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%); }
-        .rarity-legendary-bg { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
+
+<body class="relative min-h-screen">
+    <!-- Grid -->
+    <div class="fixed inset-0 grid-bg pointer-events-none -z-10"></div>
+
+    <!-- Nav -->
+    <nav class="fixed top-0 w-full bg-[#fdf6e3] border-b-4 border-retro-border z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="{% url 'landing' %}" class="flex items-center">
-                        <span class="text-2xl font-['Pacifico'] text-primary">StudyPlan</span>
-                    </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{% url 'study_plans' %}" class="text-gray-600 hover:text-primary transition-colors">
-                        <i class="ri-book-line mr-1"></i>My Study Plans
-                    </a>
+            <div class="flex justify-between h-16 items-center">
+                <a href="{% url 'landing' %}" class="flex items-center space-x-2">
+                    <div
+                        class="w-8 h-8 bg-retro-yellow border-2 border-retro-border flex items-center justify-center shadow-brutal-sm">
+                        <i class="ri-gamepad-line font-bold"></i>
+                    </div>
+                    <span class="text-3xl font-bold tracking-tight pixel-font mt-1">STUDYQUEST</span>
+                </a>
+                <div class="hidden lg:flex items-center space-x-6">
+                    <a href="{% url 'study_plans' %}"
+                        class="font-bold hover:underline decoration-4 underline-offset-4 decoration-retro-pink">My
+                        Quests</a>
+                    <a href="{% url 'upload' %}"
+                        class="brutal-btn bg-retro-blue text-retro-border px-4 py-2 text-sm">Upload New</a>
                     {% if user.is_authenticated %}
-                        <span class="text-gray-600">{{ user.first_name|default:user.username }}</span>
-                        <a href="{% url 'logout' %}" class="text-gray-600 hover:text-primary transition-colors">Logout</a>
+                    <div
+                        class="w-8 h-8 bg-retro-green border-2 border-retro-border flex items-center justify-center font-bold shadow-brutal-sm">
+                        {{ user.first_name.0|default:user.username.0|upper }}
+                    </div>
+                    <a href="{% url 'logout' %}"
+                        class="font-bold text-red-600 hover:bg-red-100 px-2 py-1 border-2 border-transparent hover:border-retro-border">EXIT</a>
                     {% endif %}
                 </div>
+                <!-- Mobile button -->
+                <button id="mobile-menu-button"
+                    class="lg:hidden w-10 h-10 bg-white border-2 border-retro-border shadow-brutal-sm flex items-center justify-center active:translate-y-1 active:translate-x-1 active:shadow-none">
+                    <i id="menu-icon" class="ri-menu-4-line text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden lg:hidden border-t-4 border-retro-border bg-white">
+            <div class="p-4 space-y-4">
+                <a href="{% url 'study_plans' %}"
+                    class="block font-bold py-2 border-b-2 border-dashed border-gray-300">My Quests</a>
+                <a href="{% url 'upload' %}" class="brutal-btn bg-retro-blue block text-center py-3 w-full">Upload
+                    New</a>
+                <a href="{% url 'logout' %}" class="block font-bold text-red-600 py-2">Exit Log</a>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <!-- Header with Level Info -->
-        <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-4xl font-bold mb-2">Level {{ user_stats.level }} Scholar</h1>
-                    <p class="text-purple-100 text-lg">{{ user.first_name|default:user.username }}'s Progress Dashboard</p>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20">
+        <!-- Player Banner -->
+        <div class="win-frame shadow-brutal-lg mb-8 bg-[#f4f4f4]">
+            <div class="win-title bg-retro-pink text-retro-border">
+                <span>PLAYER_PROFILE.exe</span>
+                <i class="ri-more-fill"></i>
+            </div>
+            <div class="p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-8">
+                <!-- Avatar -->
+                <div
+                    class="relative w-32 h-32 bg-white border-4 border-retro-border shadow-brutal flex items-center justify-center text-6xl flex-shrink-0">
+                    <span class="pixel-art">👾</span>
+                    <div
+                        class="absolute -bottom-4 -right-4 bg-retro-yellow border-2 border-retro-border px-3 py-1 font-bold shadow-brutal-sm transform rotate-6">
+                        Lv.{{ user_stats.level }}
+                    </div>
                 </div>
-                <div class="text-center">
-                    <div class="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                        <div class="text-center">
-                            <i class="ri-trophy-fill text-6xl"></i>
-                            <div class="text-2xl font-bold">{{ user_stats.level }}</div>
+
+                <!-- Info and XP -->
+                <div class="flex-1 w-full text-center md:text-left">
+                    <h1 class="text-4xl font-bold tracking-tight mb-2 uppercase">
+                        {{ request.user.first_name|default:request.user.username }}
+                    </h1>
+                    <p
+                        class="pixel-font text-xl text-gray-600 mb-6 bg-white inline-block px-2 border border-retro-border shadow-brutal-sm transform -rotate-1">
+                        TITLE: {{ user_stats.title|default:"Novice Scholar" }}</p>
+
+                    <!-- Blocky XP Bar -->
+                    <div class="mb-2 flex justify-between items-end">
+                        <span class="pixel-font font-bold text-lg">
+                            XP: {{ user_stats.current_xp }}/{{ user_stats.next_level_xp }}
+                        </span>
+                        <span class="text-xs font-bold uppercase text-gray-500">Level {{ user_stats.level|add:1 }}
+                            next</span>
+                    </div>
+                    <div class="w-full h-8 bg-white border-3 border-retro-border shadow-brutal flex overflow-hidden">
+                        <div class="bg-retro-blue h-full border-r-3 border-retro-border relative"
+                            style="width: {{ user_stats.xp_progress_percentage }}%;">
+                            <!-- Segment lines for the 8-bit look -->
+                            <div class="absolute inset-0 flex justify-between opacity-30">
+                                {% for i in "123456789" %}
+                                <div class="w-px h-full bg-retro-border"></div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- XP Progress Bar -->
-            <div class="mt-6">
-                <div class="flex items-center justify-between text-sm mb-2">
-                    <span>Level {{ user_stats.level }}</span>
-                    <span>{{ user_stats.total_xp }} XP</span>
-                    <span>Level {{ user_stats.level|add:1 }}</span>
-                </div>
-                <div class="w-full bg-white/20 rounded-full h-4 backdrop-blur-sm">
-                    <div class="bg-white h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2" 
-                         style="width: {{ user_stats.xp_progress_percentage }}%">
-                        <span class="text-xs font-bold text-purple-600">{{ user_stats.xp_progress_percentage|floatformat:0 }}%</span>
-                    </div>
-                </div>
-                <p class="text-sm text-purple-100 mt-2 text-center">
-                    {{ user_stats.xp_for_next_level|floatformat:0 }} XP needed for next level
-                </p>
             </div>
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Current Streak</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ user_stats.current_streak }}</p>
-                        <p class="text-xs text-gray-500 mt-1">Longest: {{ user_stats.longest_streak }} days</p>
-                    </div>
-                    <i class="ri-fire-fill text-5xl text-orange-500"></i>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
+            <!-- Streak -->
+            <div class="brutal-card p-4 text-center transform hover:-translate-y-1 hover:rotate-1 transition-transform">
+                <div
+                    class="w-12 h-12 mx-auto bg-retro-yellow border-2 border-retro-border flex items-center justify-center shadow-brutal-sm mb-3">
+                    <i class="ri-fire-fill text-2xl text-retro-border"></i>
                 </div>
+                <div class="pixel-font text-3xl font-bold">{{ user_stats.current_streak }}</div>
+                <div class="text-xs font-bold uppercase tracking-wide text-gray-600">Day Streak</div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Activities Done</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ user_stats.total_activities_completed }}</p>
-                        <p class="text-xs text-gray-500 mt-1">Keep it up!</p>
-                    </div>
-                    <i class="ri-checkbox-circle-fill text-5xl text-green-500"></i>
+            <!-- Longest Streak -->
+            <div
+                class="brutal-card p-4 text-center transform hover:-translate-y-1 hover:-rotate-1 transition-transform">
+                <div
+                    class="w-12 h-12 mx-auto bg-[#ff90e8] border-2 border-retro-border flex items-center justify-center shadow-brutal-sm mb-3">
+                    <i class="ri-calendar-check-fill text-2xl text-retro-border"></i>
                 </div>
+                <div class="pixel-font text-3xl font-bold">{{ user_stats.longest_streak }}</div>
+                <div class="text-xs font-bold uppercase tracking-wide text-gray-600">Best Streak</div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Weeks Completed</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ user_stats.total_weeks_completed }}</p>
-                        <p class="text-xs text-gray-500 mt-1">Amazing progress!</p>
-                    </div>
-                    <i class="ri-calendar-check-fill text-5xl text-blue-500"></i>
+            <!-- Total XP -->
+            <div class="brutal-card p-4 text-center transform hover:-translate-y-1 hover:rotate-1 transition-transform">
+                <div
+                    class="w-12 h-12 mx-auto bg-retro-green border-2 border-retro-border flex items-center justify-center shadow-brutal-sm mb-3">
+                    <i class="ri-star-smile-fill text-2xl text-retro-border"></i>
                 </div>
+                <div class="pixel-font text-3xl font-bold">{{ user_stats.total_xp }}</div>
+                <div class="text-xs font-bold uppercase tracking-wide text-gray-600">Total XP</div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Videos Watched</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ user_stats.total_videos_watched }}</p>
-                        <p class="text-xs text-gray-500 mt-1">Learning machine!</p>
-                    </div>
-                    <i class="ri-youtube-fill text-5xl text-red-500"></i>
+            <!-- Quiz Accuracy -->
+            <div
+                class="brutal-card p-4 text-center transform hover:-translate-y-1 hover:-rotate-1 transition-transform">
+                <div
+                    class="w-12 h-12 mx-auto bg-retro-blue border-2 border-retro-border flex items-center justify-center shadow-brutal-sm mb-3">
+                    <i class="ri-focus-3-line text-2xl text-retro-border"></i>
                 </div>
+                <div class="pixel-font text-3xl font-bold">{{ user_stats.quiz_accuracy|floatformat:0 }}%</div>
+                <div class="text-xs font-bold uppercase tracking-wide text-gray-600">Accuracy</div>
             </div>
         </div>
 
-        <!-- Quiz Statistics -->
-        <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl shadow-lg p-8 mb-8 text-white">
-            <h2 class="text-2xl font-bold mb-6 flex items-center">
-                <i class="ri-file-list-3-fill mr-3"></i>
-                Quiz Performance
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-sm opacity-90">Quizzes Completed</p>
-                        <i class="ri-checkbox-circle-line text-2xl"></i>
-                    </div>
-                    <p class="text-4xl font-bold">{{ user_stats.total_quizzes_completed }}</p>
-                </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-sm opacity-90">Quizzes Passed</p>
-                        <i class="ri-trophy-line text-2xl"></i>
-                    </div>
-                    <p class="text-4xl font-bold">{{ user_stats.total_quizzes_passed }}</p>
-                    <p class="text-xs opacity-75 mt-1">
-                        {% if user_stats.total_quizzes_completed > 0 %}
-                            {{ user_stats.total_quizzes_passed|floatformat:0 }}/{{ user_stats.total_quizzes_completed }}
-                            ({% widthratio user_stats.total_quizzes_passed user_stats.total_quizzes_completed 100 %}%)
-                        {% else %}
-                            No quizzes yet
-                        {% endif %}
-                    </p>
-                </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-sm opacity-90">Perfect Scores</p>
-                        <i class="ri-star-fill text-2xl"></i>
-                    </div>
-                    <p class="text-4xl font-bold">{{ user_stats.total_perfect_scores }}</p>
-                    <p class="text-xs opacity-75 mt-1">100% accuracy! 💯</p>
-                </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-sm opacity-90">Current Streak</p>
-                        <i class="ri-fire-fill text-2xl"></i>
-                    </div>
-                    <p class="text-4xl font-bold">{{ user_stats.current_quiz_streak }}</p>
-                    <p class="text-xs opacity-75 mt-1">Longest: {{ user_stats.longest_quiz_streak }}</p>
-                </div>
+        <!-- Daily Quests -->
+        <div class="win-frame shadow-brutal-lg mb-12 bg-[#f4f4f4]">
+            <div class="win-title bg-retro-yellow text-retro-border">
+                <span>DAILY_QUESTS.log</span>
+                <span class="pixel-font">{{ now|date:"d M Y" }}</span>
             </div>
-        </div>
-
-        <!-- Achievements Section -->
-        <div class="bg-white rounded-xl shadow-sm p-8 mb-8">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-900 flex items-center">
-                    <i class="ri-trophy-line text-yellow-500 mr-3"></i>
-                    Achievements
-                </h2>
-                <div class="text-sm text-gray-600">
-                    <span class="font-semibold">{{ user_stats.recent_achievements|length }}</span> unlocked
-                </div>
-            </div>
-
-            <!-- Achievement Filters -->
-            <div class="flex space-x-2 mb-6">
-                <button onclick="filterAchievements('all')" class="filter-btn px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium">
-                    All
-                </button>
-                <button onclick="filterAchievements('unlocked')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200">
-                    Unlocked
-                </button>
-                <button onclick="filterAchievements('locked')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200">
-                    Locked
-                </button>
-            </div>
-
-            <!-- Achievements Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {% for item in achievements_data %}
-                    <div class="achievement-card achievement-{{ item.achievement.rarity }} {% if item.unlocked %}achievement-unlocked{% else %}achievement-locked{% endif %}
-                                bg-white border-2 rarity-{{ item.achievement.rarity }} rounded-lg p-4 rarity-{{ item.achievement.rarity }}-bg"
-                         data-unlocked="{{ item.unlocked|yesno:'true,false' }}">
-                        <div class="flex items-start space-x-3">
-                            <div class="flex-shrink-0">
-                                <i class="{{ item.achievement.icon }} text-4xl {% if item.unlocked %}text-yellow-500{% else %}text-gray-400{% endif %}"></i>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {% for uq in daily_quests %}
+                    <div
+                        class="brutal-card p-4 flex flex-col justify-between {% if uq.is_completed %}bg-green-50{% endif %}">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold uppercase text-lg leading-tight">{{ uq.quest.title }}</h3>
+                                {% if uq.is_completed %}
+                                <i class="ri-checkbox-circle-fill text-retro-green text-xl"></i>
+                                {% else %}
+                                <i class="ri-checkbox-blank-circle-line text-gray-400 text-xl"></i>
+                                {% endif %}
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between mb-1">
-                                    <h3 class="text-sm font-bold text-gray-900 truncate">{{ item.achievement.name }}</h3>
-                                    {% if item.user_achievement and item.user_achievement.is_new %}
-                                        <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">NEW!</span>
-                                    {% endif %}
+                            <p class="text-sm font-medium mb-4">{{ uq.quest.description }}</p>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="pixel-font text-sm uppercase">STatus: {{ uq.current_count }}/{{
+                                    uq.quest.goal_count }}</span>
+                                <span class="text-xs font-bold text-retro-pink">+{{ uq.quest.reward_xp }} XP</span>
+                            </div>
+                            <div
+                                class="w-full h-4 bg-white border-2 border-retro-border shadow-brutal-sm overflow-hidden mb-4">
+                                <div class="bg-retro-cyan h-full transition-all duration-500"
+                                    style="width: {{ uq.progress_percentage }}%;"></div>
+                            </div>
+
+                            {% if uq.is_completed and not uq.is_rewarded %}
+                            <button onclick="claimReward({{ uq.id }}, this)"
+                                class="brutal-btn bg-retro-pink text-retro-border w-full py-2 text-xs font-bold">
+                                CLAIM REWARD
+                            </button>
+                            {% elif uq.is_rewarded %}
+                            <button
+                                class="w-full py-2 text-xs font-bold border-2 border-retro-border bg-gray-200 cursor-not-allowed opacity-50"
+                                disabled>
+                                REWARDED
+                            </button>
+                            {% else %}
+                            <button
+                                class="w-full py-2 text-xs font-bold border-2 border-retro-border bg-white cursor-not-allowed opacity-50"
+                                disabled>
+                                UNFINISHED
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Secondary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="win-frame shadow-brutal">
+                <div class="win-title bg-retro-border text-white text-sm">QUESTS.txt</div>
+                <div class="p-4 flex items-center justify-between">
+                    <div class="text-xs font-bold uppercase tracking-wide">Weeks Finished</div>
+                    <div class="pixel-font text-2xl bg-[#e0e0e0] border border-retro-border px-2">
+                        {{ user_stats.weeks_completed }}
+                    </div>
+                </div>
+            </div>
+            <div class="win-frame shadow-brutal">
+                <div class="win-title bg-retro-border text-white text-sm">TASKS.txt</div>
+                <div class="p-4 flex items-center justify-between">
+                    <div class="text-xs font-bold uppercase tracking-wide">Activities Done</div>
+                    <div class="pixel-font text-2xl bg-[#e0e0e0] border border-retro-border px-2">
+                        {{ user_stats.activities_completed }}
+                    </div>
+                </div>
+            </div>
+            <div class="win-frame shadow-brutal">
+                <div class="win-title bg-retro-border text-white text-sm">MEDIA.txt</div>
+                <div class="p-4 flex items-center justify-between">
+                    <div class="text-xs font-bold uppercase tracking-wide">Videos Watched</div>
+                    <div class="pixel-font text-2xl bg-[#e0e0e0] border border-retro-border px-2">
+                        {{ user_stats.videos_watched }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements Gallery -->
+        <div class="win-frame shadow-brutal-lg">
+            <div class="win-title bg-retro-blue text-retro-border flex justify-between items-center">
+                <span>ACHIEVEMENTS.inv</span>
+                <div class="flex items-center space-x-2">
+                    <button
+                        class="filter-btn active text-xs bg-white text-retro-border px-2 border border-retro-border font-sans font-bold"
+                        data-filter="all">ALL</button>
+                    <button
+                        class="filter-btn text-xs bg-transparent text-retro-border border border-retro-border px-2 font-sans font-bold hover:bg-white"
+                        data-filter="unlocked">UNLOCKED</button>
+                    <button
+                        class="filter-btn text-xs bg-transparent text-retro-border border border-retro-border px-2 font-sans font-bold hover:bg-white"
+                        data-filter="locked">LOCKED</button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Achievements Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="achievements-grid">
+                    {% for item in achievements_data %}
+                    <div class="achievement-card brutal-card p-4 {% if not item.unlocked %}achievement-locked{% endif %}"
+                        data-status="{% if item.unlocked %}unlocked{% else %}locked{% endif %}">
+                        <div class="flex items-start space-x-4">
+                            <!-- Icon Box -->
+                            <div class="w-14 h-14 border-2 border-retro-border flex items-center justify-center text-2xl shadow-brutal-sm flex-shrink-0
+                                    {% if item.achievement.rarity == 'common' %}bg-white
+                                    {% elif item.achievement.rarity == 'rare' %}bg-retro-blue
+                                    {% elif item.achievement.rarity == 'epic' %}bg-retro-pink
+                                    {% else %}bg-retro-yellow{% endif %}">
+                                <i
+                                    class="{{ item.achievement.icon_class|default:'ri-medal-fill' }} text-retro-border"></i>
+                            </div>
+
+                            <div class="flex-1">
+                                <h3 class="font-bold text-lg leading-tight mb-1">{{ item.achievement.name }}</h3>
+                                <div
+                                    class="text-xs font-bold uppercase tracking-widest text-[#666] mb-2 border-b-2 border-dashed border-[#ccc] pb-1">
+                                    {{ item.achievement.get_rarity_display }}
                                 </div>
-                                <p class="text-xs text-gray-600 mb-2">{{ item.achievement.description }}</p>
-                                <div class="flex items-center justify-between">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold
-                                                {% if item.achievement.rarity == 'common' %}bg-gray-200 text-gray-700
-                                                {% elif item.achievement.rarity == 'rare' %}bg-blue-200 text-blue-700
-                                                {% elif item.achievement.rarity == 'epic' %}bg-purple-200 text-purple-700
-                                                {% elif item.achievement.rarity == 'legendary' %}bg-yellow-200 text-yellow-700{% endif %}">
-                                        {{ item.achievement.get_rarity_display }}
-                                    </span>
-                                    <span class="text-xs font-bold text-gray-700">
-                                        <i class="ri-star-fill text-yellow-500"></i> +{{ item.achievement.xp_reward }} XP
-                                    </span>
+                                <p class="text-sm font-medium mb-3">{{ item.achievement.description }}</p>
+
+                                {% if item.unlocked %}
+                                <div class="flex justify-between items-center">
+                                    <div class="text-[10px] uppercase font-bold text-gray-500">
+                                        Unlocked: {{ item.user_achievement.unlocked_at|date:"M d, Y" }}
+                                    </div>
+                                    <div
+                                        class="pixel-font font-bold text-retro-pink bg-retro-border px-1 border border-retro-border">
+                                        +{{ item.achievement.xp_reward }} XP</div>
                                 </div>
-                                {% if item.unlocked and item.user_achievement %}
-                                    <p class="text-xs text-green-600 mt-2 font-medium">
-                                        <i class="ri-check-line"></i> Unlocked {{ item.user_achievement.unlocked_at|date:"M d, Y" }}
-                                    </p>
+                                {% else %}
+                                <div class="win-frame p-2 bg-[#f4f4f4]">
+                                    <p class="text-xs font-bold uppercase text-gray-600 mb-1">Requirement:</p>
+                                    <p class="text-xs">{{ item.achievement.requirement_description }}</p>
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
-                {% endfor %}
+                    {% empty %}
+                    <div class="col-span-full border-4 border-dashed border-gray-400 p-8 text-center bg-white">
+                        <p class="text-xl font-bold font-['Space_Grotesk'] text-gray-500">NO LOOT FOUND IN DATABASE</p>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
 
-        <!-- Recent Activity -->
-        {% if user_stats.recent_achievements %}
-        <div class="bg-white rounded-xl shadow-sm p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <i class="ri-time-line text-primary mr-3"></i>
-                Recent Achievements
-            </h2>
-            <div class="space-y-4">
-                {% for user_achievement in user_stats.recent_achievements %}
-                    <div class="flex items-center space-x-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                        <i class="{{ user_achievement.achievement.icon }} text-3xl text-yellow-500"></i>
-                        <div class="flex-1">
-                            <h3 class="font-bold text-gray-900">{{ user_achievement.achievement.name }}</h3>
-                            <p class="text-sm text-gray-600">{{ user_achievement.achievement.description }}</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-bold text-purple-600">+{{ user_achievement.achievement.xp_reward }} XP</div>
-                            <div class="text-xs text-gray-500">{{ user_achievement.unlocked_at|timesince }} ago</div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
     </div>
 
+    <!-- Scripts -->
     <script>
-        function filterAchievements(filter) {
-            const cards = document.querySelectorAll('.achievement-card');
-            const buttons = document.querySelectorAll('.filter-btn');
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile Menu
+            const btn = document.getElementById('mobile-menu-button');
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('menu-icon');
 
-            // Update button styles
-            buttons.forEach(btn => {
-                btn.classList.remove('bg-primary', 'text-white');
-                btn.classList.add('bg-gray-100', 'text-gray-700');
-            });
-            event.target.classList.remove('bg-gray-100', 'text-gray-700');
-            event.target.classList.add('bg-primary', 'text-white');
-
-            // Filter cards
-            cards.forEach(card => {
-                const isUnlocked = card.dataset.unlocked === 'true';
-
-                if (filter === 'all') {
-                    card.style.display = 'block';
-                } else if (filter === 'unlocked' && isUnlocked) {
-                    card.style.display = 'block';
-                } else if (filter === 'locked' && !isUnlocked) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-
-        // Mark achievements as seen when page loads
-        window.addEventListener('load', async () => {
-            try {
-                await fetch('/mark-achievements-seen/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}',
-                        'Content-Type': 'application/json'
+            if (btn && menu) {
+                btn.addEventListener('click', function () {
+                    menu.classList.toggle('hidden');
+                    if (menu.classList.contains('hidden')) {
+                        icon.classList.replace('ri-close-line', 'ri-menu-4-line');
+                    } else {
+                        icon.classList.replace('ri-menu-4-line', 'ri-close-line');
                     }
                 });
-            } catch (error) {
-                console.error('Error marking achievements as seen:', error);
             }
+
+            // Filtering
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const achievementCards = document.querySelectorAll('.achievement-card');
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Update active button styles
+                    filterBtns.forEach(b => {
+                        b.classList.remove('bg-white', 'active');
+                        b.classList.add('bg-transparent');
+                    });
+                    btn.classList.add('bg-white', 'active');
+                    btn.classList.remove('bg-transparent');
+
+                    const filter = btn.dataset.filter;
+                    achievementCards.forEach(card => {
+                        if (filter === 'all' || card.dataset.status === filter) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // Mark new achievements as seen
+            fetch('{% url "mark_achievements_seen" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            });
         });
+
+        function claimReward(userQuestId, btn) {
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i>';
+            btn.disabled = true;
+
+            fetch('{% url "claim_daily_reward" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_quest_id: userQuestId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        btn.innerHTML = 'REWARDED';
+                        btn.classList.replace('bg-retro-pink', 'bg-gray-200');
+                        btn.classList.add('opacity-50');
+
+                        showToast(`+${data.xp_gain} XP GAINED!`, 'success');
+
+                        // Slightly delay reload for the toast
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        btn.innerHTML = 'ERROR';
+                        alert(data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                });
+        }
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-8 right-8 z-[100] brutal-card px-6 py-4 flex items-center space-x-3 transition-all duration-500 toast-slide-in ${type === 'success' ? 'bg-retro-green' : 'bg-retro-pink'}`;
+            toast.innerHTML = `
+                <i class="${type === 'success' ? 'ri-checkbox-circle-fill' : 'ri-error-warning-fill'} text-2xl"></i>
+                <div class="font-bold uppercase">${message}</div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('translate-x-[150%]');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
     </script>
 </body>
-</html>
 
+</html>
